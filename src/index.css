@@ -759,3 +759,70 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+/* ============================================
+   READABILITY FIX FOR DARK FOUNDED THEME
+   Makes all text on dark cards readable
+===============================================*/
+
+/* All dark surfaces */
+.section-card,
+.stat-card,
+.activity-card,
+.office-card,
+.customer-box,
+.summary-grid,
+.alert,
+.progress-container,
+.activity-card .activity-content,
+.office-card p,
+.section-description {
+  color: #e8e8e8 !important;
+}
+
+/* Titles and important labels */
+.section-title,
+.office-name,
+.activity-name,
+.stat-value,
+.summary-value,
+.metric-value,
+.round-indicator .value {
+  color: #ffffff !important;
+}
+
+/* Subtle labels (not too dim) */
+.stat-label,
+.summary-label,
+.metric-label,
+.activity-cost,
+.office-feature,
+.section-description,
+.progress-value {
+  color: #c7c7c7 !important;
+}
+
+/* Very small helper text */
+.activity-requirement,
+.summary-hint,
+.text-slate-600,
+.text-slate-500 {
+  color: #bdbdbd !important;
+}
+
+/* Badge text (price tags, selected indicators) */
+.office-badge,
+.activity-badge {
+  color: #f5f5f5 !important;
+}
+
+/* Inputs and placeholders on dark background */
+.form-input {
+  color: #f1f1f1 !important;
+  background-color: #111 !important;
+  border-color: #333 !important;
+}
+.form-input::placeholder {
+  color: #aaaaaa !important;
+}
+
+/* Buttons remain controlled by their own classes */

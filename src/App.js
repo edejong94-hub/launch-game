@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   CheckCircle,
   AlertCircle,
-  AlertTriangle,
   Users,
   Beaker,
   Target,

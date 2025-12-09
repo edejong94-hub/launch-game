@@ -11,6 +11,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { db } from "./firebase";
+import foundedLogo from "./logo.svg";  
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 
 // Import configurations
@@ -66,31 +67,36 @@ const clearSession = () => {
 };
 
 // ============================================
-// SHELL COMPONENT - Header with mode-specific branding
+// ============================================
+// SHELL COMPONENT – header with Founded branding
 // ============================================
 const Shell = ({ children, currentRound, teamName, onReset }) => (
-  <div className="min-h-screen bg-slate-50 app-container">
-    <header className="bg-white border-b border-slate-100 app-header">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between header-content">
-        <div className="flex items-center gap-3 brand">
-          <div
-            className="logo"
-            style={{ backgroundColor: isResearchMode ? "#7c3aed" : "#3b82f6" }}
-          >
-            {isResearchMode ? "R" : "F"}
+  <div className="app-container">
+    <header className="app-header">
+      <div className="header-content">
+        <div className="brand">
+          <div className="brand-logo-wrap">
+            <img
+              src={foundedLogo}
+              alt="Founded"
+              className="brand-logo"
+            />
           </div>
           <div className="brand-text">
             <p className="subtitle">
-              {isResearchMode ? "Research Spin-off" : "Future Founders"}
+              {isResearchMode ? "From lab to market" : "Launch Game"}
             </p>
-            <h1>{isResearchMode ? "Lab to Market" : "Launch Game"}</h1>
+            <h1>
+              {isResearchMode ? "Research edition" : "Startup edition"}
+            </h1>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+
+        <div className="header-meta">
           {teamName && (
-            <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: "0.75rem", color: "#64748b" }}>Team</p>
-              <p style={{ fontWeight: 600, color: "#334155" }}>{teamName}</p>
+            <div className="team-indicator">
+              <p className="label">Team</p>
+              <p className="value">{teamName}</p>
             </div>
           )}
           <div className="round-indicator">
@@ -102,16 +108,8 @@ const Shell = ({ children, currentRound, teamName, onReset }) => (
           {onReset && (
             <button
               onClick={onReset}
-              style={{
-                padding: "0.5rem 0.75rem",
-                fontSize: "0.75rem",
-                backgroundColor: "#fee2e2",
-                color: "#dc2626",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-              }}
-              title="Start fresh (clears all progress)"
+              className="reset-button"
+              title="Start fresh and clear all progress"
             >
               Reset
             </button>
@@ -119,11 +117,11 @@ const Shell = ({ children, currentRound, teamName, onReset }) => (
         </div>
       </div>
     </header>
-    <main className="max-w-6xl mx-auto px-6 py-8 main-content">
-      {children}
-    </main>
+
+    <main className="main-content">{children}</main>
   </div>
 );
+
 
 // ============================================
 // GAME ENGINE - Calculate progress and validate activities
@@ -1071,24 +1069,28 @@ const GroupedActivities = ({
 // ============================================
 const LoadingScreen = () => (
   <Shell currentRound={0}>
-    <div style={{ 
-      display: "flex", 
-      flexDirection: "column", 
-      alignItems: "center", 
-      justifyContent: "center",
-      padding: "4rem",
-      textAlign: "center"
-    }}>
-      <div style={{
-        width: "48px",
-        height: "48px",
-        border: "4px solid #e2e8f0",
-        borderTopColor: isResearchMode ? "#7c3aed" : "#3b82f6",
-        borderRadius: "50%",
-        animation: "spin 1s linear infinite",
-        marginBottom: "1rem"
-      }} />
-      <p style={{ color: "#64748b" }}>Loading your game session...</p>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "4rem",
+        textAlign: "center",
+      }}
+    >
+      <div
+        style={{
+          width: "48px",
+          height: "48px",
+          border: "4px solid #262626",
+          borderTopColor: "var(--accent)",
+          borderRadius: "50%",
+          animation: "spin 1s linear infinite",
+          marginBottom: "1rem",
+        }}
+      />
+      <p style={{ color: "#9ca3af" }}>Loading your game session…</p>
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
@@ -1097,6 +1099,7 @@ const LoadingScreen = () => (
     </div>
   </Shell>
 );
+
 
 // ============================================
 // MAIN TEAM GAME FORM COMPONENT

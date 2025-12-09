@@ -27,10 +27,48 @@ const getGameConfig = () => {
 const GAME_CONFIG = getGameConfig();
 const isResearchMode = GAME_CONFIG.gameMode === "research";
 
+// Get gameId from URL
+const getGameId = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("gameId") || "demo-game";
+};
+
+// ============================================
+// SESSION STORAGE HELPERS
+// ============================================
+const SESSION_KEY = `launchGame_${getGameId()}`;
+
+const saveSession = (data) => {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.error("Failed to save session:", err);
+  }
+};
+
+const loadSession = () => {
+  try {
+    const saved = localStorage.getItem(SESSION_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch (err) {
+    console.error("Failed to load session:", err);
+    return null;
+  }
+};
+
+const clearSession = () => {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem("oderId");
+  } catch (err) {
+    console.error("Failed to clear session:", err);
+  }
+};
+
 // ============================================
 // SHELL COMPONENT - Header with mode-specific branding
 // ============================================
-const Shell = ({ children, currentRound }) => (
+const Shell = ({ children, currentRound, teamName, onReset }) => (
   <div className="min-h-screen bg-slate-50 app-container">
     <header className="bg-white border-b border-slate-100 app-header">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between header-content">
@@ -48,11 +86,36 @@ const Shell = ({ children, currentRound }) => (
             <h1>{isResearchMode ? "Lab to Market" : "Launch Game"}</h1>
           </div>
         </div>
-        <div className="round-indicator">
-          <p className="label">Current round</p>
-          <p className="value">
-            {currentRound === 0 ? "Start" : `Round ${currentRound}`}
-          </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+          {teamName && (
+            <div style={{ textAlign: "right" }}>
+              <p style={{ fontSize: "0.75rem", color: "#64748b" }}>Team</p>
+              <p style={{ fontWeight: 600, color: "#334155" }}>{teamName}</p>
+            </div>
+          )}
+          <div className="round-indicator">
+            <p className="label">Current round</p>
+            <p className="value">
+              {currentRound === 0 ? "Start" : `Round ${currentRound}`}
+            </p>
+          </div>
+          {onReset && (
+            <button
+              onClick={onReset}
+              style={{
+                padding: "0.5rem 0.75rem",
+                fontSize: "0.75rem",
+                backgroundColor: "#fee2e2",
+                color: "#dc2626",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+              title="Start fresh (clears all progress)"
+            >
+              Reset
+            </button>
+          )}
         </div>
       </div>
     </header>
@@ -1004,28 +1067,60 @@ const GroupedActivities = ({
 };
 
 // ============================================
+// LOADING SCREEN
+// ============================================
+const LoadingScreen = () => (
+  <Shell currentRound={0}>
+    <div style={{ 
+      display: "flex", 
+      flexDirection: "column", 
+      alignItems: "center", 
+      justifyContent: "center",
+      padding: "4rem",
+      textAlign: "center"
+    }}>
+      <div style={{
+        width: "48px",
+        height: "48px",
+        border: "4px solid #e2e8f0",
+        borderTopColor: isResearchMode ? "#7c3aed" : "#3b82f6",
+        borderRadius: "50%",
+        animation: "spin 1s linear infinite",
+        marginBottom: "1rem"
+      }} />
+      <p style={{ color: "#64748b" }}>Loading your game session...</p>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  </Shell>
+);
+
+// ============================================
 // MAIN TEAM GAME FORM COMPONENT
 // ============================================
-const TeamGameForm = ({ config, onSubmit }) => {
-  const [teamName, setTeamName] = useState("");
-  const [founders, setFounders] = useState(isResearchMode ? 3 : 4);
-  const [office, setOffice] = useState(isResearchMode ? "university" : "attic");
-  const [legalForm, setLegalForm] = useState(null);
+const TeamGameForm = ({ config, initialData, onReset }) => {
+  const [teamName, setTeamName] = useState(initialData?.teamName || "");
+  const [founders, setFounders] = useState(initialData?.founders || (isResearchMode ? 3 : 4));
+  const [office, setOffice] = useState(initialData?.office || (isResearchMode ? "university" : "attic"));
+  const [legalForm, setLegalForm] = useState(initialData?.legalForm || null);
   const [activities, setActivities] = useState({});
-  const [currentRound, setCurrentRound] = useState(1);
+  const [currentRound, setCurrentRound] = useState(initialData?.currentRound || 1);
   const [juniorHires, setJuniorHires] = useState(0);
-  const [showReport, setShowReport] = useState(false);
+  const [showReport, setShowReport] = useState(initialData?.showReport || false);
   const [formError, setFormError] = useState("");
-  const [ideaConfirmed, setIdeaConfirmed] = useState(false);
+  const [ideaConfirmed, setIdeaConfirmed] = useState(initialData?.ideaConfirmed || false);
 
   // Research mode specific state
-  const [teamProfiles, setTeamProfiles] = useState(["", "", ""]);
-  const [licenceAgreement, setLicenceAgreement] = useState(null);
-  const [hiredProfiles, setHiredProfiles] = useState([]);
+  const [teamProfiles, setTeamProfiles] = useState(initialData?.teamProfiles || ["", "", ""]);
+  const [licenceAgreement, setLicenceAgreement] = useState(initialData?.licenceAgreement || null);
+  const [hiredProfiles, setHiredProfiles] = useState(initialData?.hiredProfiles || []);
   const [showDiversityEvent, setShowDiversityEvent] = useState(false);
-  const [diversityEventSeen, setDiversityEventSeen] = useState(false);
+  const [diversityEventSeen, setDiversityEventSeen] = useState(initialData?.diversityEventSeen || false);
 
-  const [startupIdea, setStartupIdea] = useState({
+  const [startupIdea, setStartupIdea] = useState(initialData?.startupIdea || {
     technique: "",
     productIdea: "",
     problem: "",
@@ -1042,7 +1137,7 @@ const TeamGameForm = ({ config, onSubmit }) => {
     loanInterest: "",
   });
 
-  const [teamData, setTeamData] = useState({
+  const [teamData, setTeamData] = useState(initialData?.teamData || {
     cash: config.gameInfo.startingCapital,
     phase: 1,
     employees: 0,
@@ -1072,6 +1167,28 @@ const TeamGameForm = ({ config, onSubmit }) => {
     },
     config
   );
+
+  // Save session whenever important state changes
+  useEffect(() => {
+    if (teamName) {
+      saveSession({
+        teamName,
+        founders,
+        office,
+        legalForm,
+        currentRound,
+        showReport,
+        ideaConfirmed,
+        teamProfiles,
+        licenceAgreement,
+        hiredProfiles,
+        diversityEventSeen,
+        startupIdea,
+        teamData,
+      });
+    }
+  }, [teamName, founders, office, legalForm, currentRound, showReport, ideaConfirmed, 
+      teamProfiles, licenceAgreement, hiredProfiles, diversityEventSeen, startupIdea, teamData]);
 
   useEffect(() => {
     if (
@@ -1163,11 +1280,8 @@ const TeamGameForm = ({ config, onSubmit }) => {
 
     setTeamData(newTeamData);
     setShowReport(true);
-    if (onSubmit) onSubmit(newTeamData);
 
-    const gameId =
-      new URLSearchParams(window.location.search).get("gameId") ||
-      "demo-game";
+    const gameId = getGameId();
     let oderId = localStorage.getItem("oderId");
     if (!oderId) {
       oderId = crypto.randomUUID();
@@ -1221,9 +1335,7 @@ const TeamGameForm = ({ config, onSubmit }) => {
   };
 
   const startNextRound = async () => {
-    const gameId =
-      new URLSearchParams(window.location.search).get("gameId") ||
-      "demo-game";
+    const gameId = getGameId();
     const oderId = localStorage.getItem("oderId");
 
     if (oderId && gameId) {
@@ -1280,7 +1392,7 @@ const TeamGameForm = ({ config, onSubmit }) => {
       profilesComplete;
 
     return (
-      <Shell currentRound={0}>
+      <Shell currentRound={0} onReset={onReset}>
         <SectionCard
           title="Team Information"
           description="Fill this in before the game starts."
@@ -1431,7 +1543,7 @@ const TeamGameForm = ({ config, onSubmit }) => {
   // ============================================
   if (showReport) {
     return (
-      <Shell currentRound={currentRound}>
+      <Shell currentRound={currentRound} teamName={teamName} onReset={onReset}>
         <SectionCard
           title="Progress Report"
           description={`${teamName} - Round ${currentRound}`}
@@ -1640,7 +1752,7 @@ const TeamGameForm = ({ config, onSubmit }) => {
   // MAIN GAME FORM
   // ============================================
   return (
-    <Shell currentRound={currentRound}>
+    <Shell currentRound={currentRound} teamName={teamName} onReset={onReset}>
       {showDiversityEvent && isResearchMode && (
         <TeamDiversityEvent
           config={config}
@@ -2008,8 +2120,100 @@ const TeamGameForm = ({ config, onSubmit }) => {
 };
 
 // ============================================
-// MAIN APP EXPORT
+// MAIN APP EXPORT WITH SESSION RESTORE
 // ============================================
 export default function LaunchGame() {
-  return <TeamGameForm config={GAME_CONFIG} />;
+  const [loading, setLoading] = useState(true);
+  const [initialData, setInitialData] = useState(null);
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      // First check localStorage
+      const savedSession = loadSession();
+      
+      if (savedSession && savedSession.teamName) {
+        // We have a local session, use it
+        setInitialData(savedSession);
+        setLoading(false);
+        return;
+      }
+
+      // Check if we have an oderId but no local session (might have been cleared)
+      const oderId = localStorage.getItem("oderId");
+      const gameId = getGameId();
+
+      if (oderId && gameId) {
+        try {
+          // Try to restore from Firebase
+          const teamDoc = await getDoc(doc(db, "games", gameId, "teams", oderId));
+          
+          if (teamDoc.exists()) {
+            const data = teamDoc.data();
+            const currentRound = data.currentRound || 1;
+            
+            // Get the latest round data
+            const roundDoc = await getDoc(
+              doc(db, "games", gameId, "teams", oderId, "rounds", String(currentRound))
+            );
+            
+            if (roundDoc.exists()) {
+              const roundData = roundDoc.data();
+              
+              // Restore full session from Firebase
+              const restoredData = {
+                teamName: data.teamName,
+                founders: roundData.founders || (isResearchMode ? 3 : 4),
+                office: roundData.office,
+                legalForm: roundData.legalForm,
+                currentRound: currentRound,
+                showReport: true, // They submitted, so show report
+                ideaConfirmed: true,
+                teamProfiles: data.teamProfiles || ["", "", ""],
+                licenceAgreement: data.licenceAgreement,
+                hiredProfiles: roundData.hiredProfiles || [],
+                diversityEventSeen: currentRound >= 2,
+                startupIdea: data.startupIdea || roundData.startupIdea,
+                teamData: {
+                  cash: roundData.progress?.cash || roundData.cash || GAME_CONFIG.gameInfo.startingCapital,
+                  phase: roundData.phase || 1,
+                  employees: roundData.employees || 0,
+                  hasSenior: roundData.hasSenior || false,
+                  seniorUnlocked: roundData.seniorUnlocked || false,
+                  completedActivities: roundData.completedActivities || [],
+                  trl: roundData.trl || roundData.progress?.currentTRL || 3,
+                  interviewCount: roundData.interviewCount || roundData.progress?.interviewsTotal || 0,
+                  validationCount: roundData.validationCount || roundData.progress?.validationsTotal || 0,
+                },
+              };
+              
+              setInitialData(restoredData);
+              saveSession(restoredData); // Save to localStorage for faster future loads
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Error restoring from Firebase:", err);
+        }
+      }
+
+      // No session found, start fresh
+      setLoading(false);
+    };
+
+    restoreSession();
+  }, []);
+
+  const handleReset = () => {
+    if (window.confirm("Are you sure you want to start over? All progress will be lost.")) {
+      clearSession();
+      window.location.reload();
+    }
+  };
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  return <TeamGameForm config={GAME_CONFIG} initialData={initialData} onReset={handleReset} />;
 }

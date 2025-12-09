@@ -14,8 +14,315 @@ export const RESEARCH_CONFIG = {
   },
 
   // ============================================
+  // EXPERT ROLES & CONTRACT REQUIREMENTS
+  // Each expert requires physical documentation
+  // ============================================
+  expertRoles: {
+    tto: {
+      id: "tto",
+      name: "TTO Officer",
+      icon: "🏛️",
+      description: "IP licensing, university negotiations, lab access",
+      keyTension: "Takes equity/royalties, controls IP, can be slow",
+      activities: ["ttoDiscussion", "ttoNegotiation", "licenceNegotiation", "labNegotiation", "universityExit"],
+      contracts: [
+        { id: "ttoMeeting", name: "TTO Meeting Notes", description: "Record of initial TTO discussion" },
+        { id: "licenceAgreement", name: "Licence Agreement", description: "Signed university licence terms" },
+      ],
+    },
+    patent: {
+      id: "patent",
+      name: "Patent Attorney",
+      icon: "⚖️",
+      description: "Patent filing, freedom to operate analysis",
+      keyTension: "Costs money, takes time, but protects tech",
+      activities: ["patentSearch", "patentFiling", "patentDIY"],
+      contracts: [
+        { id: "patentStrategy", name: "Patent Strategy Form", description: "Filing strategy and claims outline" },
+        { id: "ftoReport", name: "FTO Report", description: "Freedom to operate analysis results" },
+      ],
+    },
+    investor: {
+      id: "investor",
+      name: "VC / Investor",
+      icon: "💰",
+      description: "Large funding (€100K+), strategic advice",
+      keyTension: "Wants significant equity, board seats, exit",
+      activities: ["investorMeeting", "investorNegotiation"],
+      contracts: [
+        { id: "pitchDeck", name: "Pitch Deck Feedback", description: "Investor feedback on pitch" },
+        { id: "termSheet", name: "Term Sheet", description: "Investment terms and conditions" },
+      ],
+    },
+    grant: {
+      id: "grant",
+      name: "Grant Advisor",
+      icon: "📋",
+      description: "NWO, WBSO, EU Horizon funding",
+      keyTension: "No equity loss, but slow and restrictive",
+      activities: ["grantTakeoff", "grantWBSO", "grantRegional"],
+      contracts: [
+        { id: "grantApplication", name: "Grant Application", description: "Completed grant application form" },
+        { id: "grantBudget", name: "Grant Budget", description: "Detailed budget breakdown" },
+      ],
+    },
+    incubator: {
+      id: "incubator",
+      name: "Incubator",
+      icon: "🏢",
+      description: "Workspace, mentoring, network, small funding",
+      keyTension: "Takes some equity, requires application",
+      activities: ["incubatorApplication"],
+      contracts: [
+        { id: "incubatorApp", name: "Incubator Application", description: "Program application form" },
+        { id: "incubatorTerms", name: "Incubator Terms", description: "Program terms and equity" },
+      ],
+    },
+    bank: {
+      id: "bank",
+      name: "Bank / Loan Officer",
+      icon: "🏦",
+      description: "Debt financing, working capital",
+      keyTension: "No equity loss, requires collateral/guarantees",
+      activities: ["bankMeeting", "loanApplication"],
+      contracts: [
+        { id: "loanApplication", name: "Loan Application", description: "Business plan for bank" },
+        { id: "loanAgreement", name: "Loan Agreement", description: "Signed loan terms" },
+      ],
+    },
+    industry: {
+      id: "industry",
+      name: "Industry Partner",
+      icon: "🏭",
+      description: "Domain expertise, pilots, co-development",
+      keyTension: "May want exclusive tech rights",
+      activities: ["industryExploration", "pilotProject"],
+      contracts: [
+        { id: "ndaAgreement", name: "NDA Agreement", description: "Confidentiality agreement" },
+        { id: "pilotAgreement", name: "Pilot Agreement", description: "Pilot project terms" },
+      ],
+    },
+    customer: {
+      id: "customer",
+      name: "Customer / Market Expert",
+      icon: "🎯",
+      description: "Customer interviews, validation, LOIs",
+      keyTension: "Takes time away from development",
+      activities: ["customerInterviews", "customerValidation"],
+      contracts: [
+        { id: "interviewLog", name: "Interview Log", description: "Record of customer conversations" },
+        { id: "loi", name: "Letter of Intent", description: "Customer commitment document" },
+      ],
+    },
+  },
+
+  // ============================================
+  // GAME EVENTS / POPUPS
+  // Dramatic moments to make the game more engaging
+  // ============================================
+  gameEvents: {
+    // Round-based events
+    round1Start: {
+      trigger: "roundStart",
+      round: 1,
+      title: "🚀 Welcome to the Spin-off Journey!",
+      message: "You've discovered something amazing in your research. Now comes the hard part: turning science into a business. The university owns your IP - you'll need to negotiate with the TTO. Your first priority should be customer discovery.",
+      tips: [
+        "Talk to the TTO Officer before filing any patents",
+        "Start customer interviews immediately - don't build in isolation",
+        "You have limited time as a university employee",
+      ],
+    },
+    round2Warning: {
+      trigger: "roundStart",
+      round: 2,
+      title: "⏰ Six Months Have Passed",
+      message: "Time flies when you're building a startup. Have you validated your idea with real customers? Do you have a TTO agreement? Investors will start asking tough questions.",
+      tips: [
+        "You should have at least 2 customer interviews by now",
+        "Start thinking about funding - grants take 6+ months",
+        "Your runway is burning - check your cash position",
+      ],
+    },
+    round3Pressure: {
+      trigger: "roundStart",
+      round: 3,
+      title: "🔥 The Pressure Builds",
+      message: "Year 1.5 into your journey. Your university position is getting harder to balance. Investors are asking about traction. Some teams are pulling ahead.",
+      tips: [
+        "Do you need to leave the university?",
+        "Customer validation is crucial now",
+        "Consider if your team has the right skills",
+      ],
+    },
+    round4Final: {
+      trigger: "roundStart",
+      round: 4,
+      title: "🎯 Final Stretch",
+      message: "Last 6 months! This is where everything comes together - or falls apart. Make your final moves count.",
+      tips: [
+        "Close any pending deals",
+        "Maximize your score metrics",
+        "Prepare for final presentations",
+      ],
+    },
+
+    // Expert-triggered events
+    ttoFirstMeeting: {
+      trigger: "activity",
+      activity: "ttoDiscussion",
+      title: "🏛️ First TTO Meeting",
+      message: "You've met with the Technology Transfer Office. They explained that the university owns all IP created using university resources. Now you need to negotiate a licence agreement.",
+      severity: "info",
+      consequences: [
+        "IP activities are now unlocked",
+        "You can start licence negotiations",
+        "The TTO will want royalties or equity",
+      ],
+    },
+    investorFirstMeeting: {
+      trigger: "activity",
+      activity: "investorMeeting",
+      title: "💰 Investor Interest!",
+      message: "An investor has shown interest in your company! They see potential but have tough questions about your team, market, and IP position.",
+      severity: "success",
+      consequences: [
+        "Term sheet negotiations are now possible",
+        "Be prepared to give up 15-30% equity",
+        "They'll want board seats and control provisions",
+      ],
+    },
+    grantApproved: {
+      trigger: "activity",
+      activity: "grantTakeoff",
+      title: "🎉 Grant Application Submitted!",
+      message: "You've submitted your NWO Take-off application. These grants are very competitive (20-30% success rate) but provide non-dilutive funding.",
+      severity: "info",
+      consequences: [
+        "Results take 3-6 months",
+        "If successful: €40-250k with no equity loss",
+        "Grant money has spending restrictions",
+      ],
+    },
+    bankMeetingEvent: {
+      trigger: "activity",
+      activity: "bankMeeting",
+      title: "🏦 Bank Meeting",
+      message: "The bank is interested in your business but has concerns. Deep tech startups are risky for traditional lenders. They want to see revenue or strong collateral.",
+      severity: "warning",
+      consequences: [
+        "Banks typically want personal guarantees",
+        "Interest rates for startups are high (8-15%)",
+        "No equity loss, but debt must be repaid",
+      ],
+    },
+    customerValidationSuccess: {
+      trigger: "activity",
+      activity: "customerValidation",
+      title: "🎯 Customer Validation Achieved!",
+      message: "A customer has signed a Letter of Intent or agreed to a pilot! This is a major milestone - proof that someone will pay for your technology.",
+      severity: "success",
+      consequences: [
+        "Investor appeal significantly increased",
+        "You can now pursue pilot projects",
+        "Use this in grant applications",
+      ],
+    },
+    patentFiled: {
+      trigger: "activity",
+      activity: "patentFiling",
+      title: "⚖️ Patent Application Filed",
+      message: "Your patent attorney has filed the application. You now have 'patent pending' status. Full protection takes 2-4 years, but you can show investors you're protecting the IP.",
+      severity: "success",
+      consequences: [
+        "Investor appeal +2",
+        "'Patent pending' can be used in marketing",
+        "Watch for infringement from competitors",
+      ],
+    },
+    incubatorAccepted: {
+      trigger: "activity",
+      activity: "incubatorApplication",
+      title: "🏢 Incubator Application Submitted",
+      message: "You've applied to join an incubator program. If accepted, you'll get office space, mentoring, and access to their network - but they'll want equity.",
+      severity: "info",
+      consequences: [
+        "Incubator office space now available",
+        "Expect to give 2-8% equity",
+        "Valuable mentoring and connections",
+      ],
+    },
+    pilotProjectStart: {
+      trigger: "activity",
+      activity: "pilotProject",
+      title: "🏭 Pilot Project Launched!",
+      message: "You've started a real-world pilot with an industry partner! This is a huge step - if successful, it proves your technology works outside the lab.",
+      severity: "success",
+      consequences: [
+        "TRL +2 (major advancement)",
+        "Strong proof point for investors",
+        "Revenue potential if pilot converts",
+      ],
+    },
+    loanApproved: {
+      trigger: "activity",
+      activity: "loanApplication",
+      title: "🏦 Loan Application Submitted",
+      message: "You've applied for bank financing. Remember: debt must be repaid regardless of company success. Make sure you can handle the payments.",
+      severity: "warning",
+      consequences: [
+        "No equity dilution",
+        "Interest payments start immediately",
+        "Personal guarantees may be required",
+      ],
+    },
+
+    // Warning events
+    lowCashWarning: {
+      trigger: "metric",
+      metric: "cash",
+      threshold: 5000,
+      comparison: "below",
+      title: "⚠️ Cash Running Low!",
+      message: "Your bank account is nearly empty. You need funding soon or you'll have to shut down operations.",
+      severity: "danger",
+      tips: [
+        "Talk to the bank about a bridge loan",
+        "Accelerate grant applications",
+        "Consider investor funding despite dilution",
+      ],
+    },
+    equityDilutionWarning: {
+      trigger: "metric",
+      metric: "founderEquity",
+      threshold: 50,
+      comparison: "below",
+      title: "⚠️ Significant Dilution!",
+      message: "Founders now own less than 50% of the company. You're losing control. Future investors will dilute you further.",
+      severity: "warning",
+      tips: [
+        "Be very careful with future equity deals",
+        "Consider debt financing instead",
+        "Negotiate anti-dilution protections",
+      ],
+    },
+    noCustomerValidation: {
+      trigger: "roundEnd",
+      round: 2,
+      condition: "validations < 1",
+      title: "🎯 No Customer Validation Yet!",
+      message: "You've been building for a year without proving anyone will pay for this. This is the #1 reason deep tech startups fail.",
+      severity: "danger",
+      tips: [
+        "Stop development and talk to customers",
+        "Get a Letter of Intent before round 3",
+        "Investors will reject you without validation",
+      ],
+    },
+  },
+
+  // ============================================
   // TEAM PROFILE OPTIONS
-  // Used for diverse team mechanic - each founder picks a profile
   // ============================================
   founderProfiles: {
     scientist: {
@@ -62,8 +369,6 @@ export const RESEARCH_CONFIG = {
 
   // ============================================
   // LICENCE AGREEMENT OPTIONS
-  // Different deal structures with the university TTO
-  // Teaching: revenue vs profit, early payments, high percentages
   // ============================================
   licenceOptions: {
     balanced: {
@@ -129,7 +434,6 @@ export const RESEARCH_CONFIG = {
 
   // ============================================
   // TEAM DIVERSITY EVENT
-  // Triggers in round 2 to teach about balanced teams
   // ============================================
   teamDiversityEvent: {
     triggerRound: 2,
@@ -163,6 +467,75 @@ export const RESEARCH_CONFIG = {
   },
 
   // ============================================
+  // END GAME SCORING BREAKDOWN
+  // Shown after round 4
+  // ============================================
+  endGameScoring: {
+    categories: [
+      {
+        id: "financial",
+        name: "Financial Health",
+        icon: "💰",
+        maxPoints: 25,
+        metrics: [
+          { id: "cash", name: "Cash Position", weight: 15, target: 50000, description: "More cash = more runway" },
+          { id: "revenue", name: "Revenue Generated", weight: 10, target: 20000, description: "Paying customers prove value" },
+        ],
+      },
+      {
+        id: "technology",
+        name: "Technology Progress",
+        icon: "🔬",
+        maxPoints: 25,
+        metrics: [
+          { id: "trl", name: "TRL Level", weight: 20, target: 7, description: "How close to market-ready" },
+          { id: "patents", name: "IP Protection", weight: 5, target: 1, description: "Patents protect your innovation" },
+        ],
+      },
+      {
+        id: "market",
+        name: "Market Validation",
+        icon: "🎯",
+        maxPoints: 25,
+        metrics: [
+          { id: "validations", name: "Customer Validations", weight: 15, target: 2, description: "LOIs and pilot agreements" },
+          { id: "interviews", name: "Customer Interviews", weight: 10, target: 6, description: "Understanding your market" },
+        ],
+      },
+      {
+        id: "team",
+        name: "Team & Structure",
+        icon: "👥",
+        maxPoints: 15,
+        metrics: [
+          { id: "equity", name: "Founder Equity", weight: 10, target: 60, description: "Maintain ownership control" },
+          { id: "legalForm", name: "Legal Structure", weight: 5, target: 1, description: "BV established" },
+        ],
+      },
+      {
+        id: "bonuses",
+        name: "Achievement Bonuses",
+        icon: "🏆",
+        maxPoints: 10,
+        bonuses: [
+          { id: "grantWinner", name: "Grant Secured", points: 3, condition: "hasGrant" },
+          { id: "incubator", name: "Incubator Accepted", points: 2, condition: "inIncubator" },
+          { id: "balancedTeam", name: "Balanced Team", points: 2, condition: "balancedTeam" },
+          { id: "goodLicence", name: "Fair Licence Deal", points: 2, condition: "goodLicence" },
+          { id: "noBankruptcy", name: "Never Went Negative", points: 1, condition: "neverNegative" },
+        ],
+      },
+    ],
+    rankings: {
+      excellent: { min: 80, label: "🌟 Excellent", description: "Ready for Series A!" },
+      strong: { min: 65, label: "💪 Strong", description: "On track for success" },
+      good: { min: 50, label: "👍 Good", description: "Solid foundation" },
+      developing: { min: 35, label: "📈 Developing", description: "More work needed" },
+      struggling: { min: 0, label: "⚠️ Struggling", description: "Major challenges ahead" },
+    },
+  },
+
+  // ============================================
   // PHASES
   // ============================================
   phases: {
@@ -184,7 +557,6 @@ export const RESEARCH_CONFIG = {
 
   // ============================================
   // EMPLOYMENT STATUS
-  // Affects available hours per round
   // ============================================
   employmentStatus: {
     university: {
@@ -261,25 +633,36 @@ export const RESEARCH_CONFIG = {
       id: "discovery",
       title: "Customer Discovery",
       description: "Validate that someone will pay for your technology.",
+      expert: "customer",
       activities: ["customerInterviews", "customerValidation", "industryExploration"],
     },
     {
       id: "tto",
       title: "University & TTO",
       description: "Negotiate IP rights and your relationship with the university.",
+      expert: "tto",
       activities: ["ttoDiscussion", "ttoNegotiation", "licenceNegotiation", "labNegotiation", "universityExit"],
     },
     {
       id: "ip",
       title: "Intellectual Property",
       description: "Protect your innovations. Meet TTO first.",
+      expert: "patent",
       activities: ["patentSearch", "patentFiling", "patentDIY"],
     },
     {
       id: "funding",
       title: "Funding & Grants",
       description: "Secure money to grow. Different options have different trade-offs.",
+      expert: "grant",
       activities: ["grantTakeoff", "grantWBSO", "grantRegional", "investorMeeting", "investorNegotiation"],
+    },
+    {
+      id: "banking",
+      title: "Bank & Loans",
+      description: "Debt financing - no equity loss but must be repaid.",
+      expert: "bank",
+      activities: ["bankMeeting", "loanApplication"],
     },
     {
       id: "team",
@@ -306,6 +689,8 @@ export const RESEARCH_CONFIG = {
       costMoney: 0,
       category: "discovery",
       description: "Talk to potential customers. Essential for validation.",
+      requiresContract: "interviewLog",
+      expert: "customer",
     },
     customerValidation: {
       name: "Customer Validation (LOI/Pilot)",
@@ -314,6 +699,9 @@ export const RESEARCH_CONFIG = {
       category: "discovery",
       description: "Get letter of intent or pilot agreement.",
       requiresInterviews: 2,
+      requiresContract: "loi",
+      expert: "customer",
+      triggersEvent: "customerValidationSuccess",
     },
     industryExploration: {
       name: "Industry Partner Exploration",
@@ -321,6 +709,8 @@ export const RESEARCH_CONFIG = {
       costMoney: 1000,
       category: "discovery",
       description: "Identify potential industry partners or licensees.",
+      requiresContract: "ndaAgreement",
+      expert: "industry",
     },
 
     // === UNIVERSITY & TTO ===
@@ -331,6 +721,9 @@ export const RESEARCH_CONFIG = {
       category: "tto",
       description: "Required first step. Discuss IP ownership with Tech Transfer Office.",
       unlocks: ["ttoNegotiation", "licenceNegotiation", "patentSearch", "patentFiling", "patentDIY", "legalForm"],
+      requiresContract: "ttoMeeting",
+      expert: "tto",
+      triggersEvent: "ttoFirstMeeting",
     },
     ttoNegotiation: {
       name: "TTO: Terms Negotiation",
@@ -339,6 +732,7 @@ export const RESEARCH_CONFIG = {
       category: "tto",
       description: "Negotiate specific terms with the TTO.",
       requiresActivity: "ttoDiscussion",
+      expert: "tto",
     },
     licenceNegotiation: {
       name: "Licence Agreement",
@@ -348,6 +742,8 @@ export const RESEARCH_CONFIG = {
       description: "Finalize the licence agreement with the university.",
       requiresActivity: "ttoDiscussion",
       unlocks: ["licenceChoice"],
+      requiresContract: "licenceAgreement",
+      expert: "tto",
     },
     labNegotiation: {
       name: "Lab Access Negotiation",
@@ -355,6 +751,7 @@ export const RESEARCH_CONFIG = {
       costMoney: 0,
       category: "tto",
       description: "Negotiate continued use of university facilities after spinning off.",
+      expert: "tto",
     },
     universityExit: {
       name: "University Exit Discussion",
@@ -362,6 +759,7 @@ export const RESEARCH_CONFIG = {
       costMoney: 0,
       category: "tto",
       description: "Negotiate leaving terms, transition plan, ongoing relationships.",
+      expert: "tto",
     },
 
     // === INTELLECTUAL PROPERTY ===
@@ -372,6 +770,8 @@ export const RESEARCH_CONFIG = {
       category: "ip",
       description: "Check if your technology infringes existing patents.",
       requiresActivity: "ttoDiscussion",
+      requiresContract: "ftoReport",
+      expert: "patent",
     },
     patentFiling: {
       name: "Patent: Professional Filing",
@@ -381,6 +781,9 @@ export const RESEARCH_CONFIG = {
       description: "Hire attorney for proper IP protection. Stronger claims.",
       investorAppealBonus: 2,
       requiresActivity: "ttoDiscussion",
+      requiresContract: "patentStrategy",
+      expert: "patent",
+      triggersEvent: "patentFiled",
     },
     patentDIY: {
       name: "Patent: DIY Filing",
@@ -390,6 +793,7 @@ export const RESEARCH_CONFIG = {
       description: "Cheaper but risky. May have weak claims that don't hold up.",
       investorAppealBonus: 1,
       requiresActivity: "ttoDiscussion",
+      expert: "patent",
     },
 
     // === FUNDING & GRANTS ===
@@ -399,6 +803,9 @@ export const RESEARCH_CONFIG = {
       costMoney: 0,
       category: "funding",
       description: "€40-250k, no equity loss. Very competitive, 3-6 month process.",
+      requiresContract: "grantApplication",
+      expert: "grant",
+      triggersEvent: "grantApproved",
     },
     grantWBSO: {
       name: "WBSO Registration",
@@ -406,6 +813,8 @@ export const RESEARCH_CONFIG = {
       costMoney: 0,
       category: "funding",
       description: "Tax credit on R&D costs. ~€20k/year benefit. Relatively easy.",
+      requiresContract: "grantApplication",
+      expert: "grant",
     },
     grantRegional: {
       name: "Regional Fund (ROM/MIT)",
@@ -413,6 +822,8 @@ export const RESEARCH_CONFIG = {
       costMoney: 0,
       category: "funding",
       description: "€50-150k, may take small equity stake (0-8%).",
+      requiresContract: "grantApplication",
+      expert: "grant",
     },
     investorMeeting: {
       name: "Investor Meeting",
@@ -421,6 +832,9 @@ export const RESEARCH_CONFIG = {
       category: "funding",
       description: "Pitch to VCs or angels. Build relationships.",
       unlocks: ["investorNegotiation"],
+      requiresContract: "pitchDeck",
+      expert: "investor",
+      triggersEvent: "investorFirstMeeting",
     },
     investorNegotiation: {
       name: "Term Sheet Negotiation",
@@ -429,10 +843,35 @@ export const RESEARCH_CONFIG = {
       category: "funding",
       description: "Negotiate investment terms. Lawyer costs included.",
       requiresActivity: "investorMeeting",
+      requiresContract: "termSheet",
+      expert: "investor",
+    },
+
+    // === BANK & LOANS (NEW) ===
+    bankMeeting: {
+      name: "Bank: Initial Meeting",
+      costTime: 40,
+      costMoney: 0,
+      category: "banking",
+      description: "Discuss financing options with the bank. They want to see your business plan.",
+      unlocks: ["loanApplication"],
+      requiresContract: "loanApplication",
+      expert: "bank",
+      triggersEvent: "bankMeetingEvent",
+    },
+    loanApplication: {
+      name: "Loan Application",
+      costTime: 60,
+      costMoney: 500,
+      category: "banking",
+      description: "Apply for bank financing. Application fee included.",
+      requiresActivity: "bankMeeting",
+      requiresContract: "loanAgreement",
+      expert: "bank",
+      triggersEvent: "loanApproved",
     },
 
     // === TEAM & HIRING ===
-    // These activities help fix team imbalance identified in round 2 event
     cofounderAgreement: {
       name: "Co-founder Agreement",
       costTime: 40,
@@ -493,6 +932,9 @@ export const RESEARCH_CONFIG = {
       description: "Real-world test with customer. Big TRL jump (+2).",
       trlBonus: 2,
       requiresActivity: "customerValidation",
+      requiresContract: "pilotAgreement",
+      expert: "industry",
+      triggersEvent: "pilotProjectStart",
     },
     incubatorApplication: {
       name: "Incubator Application",
@@ -501,6 +943,9 @@ export const RESEARCH_CONFIG = {
       category: "development",
       description: "Apply for startup program. Unlocks incubator office space.",
       unlocks: ["incubatorOffice"],
+      requiresContract: "incubatorApp",
+      expert: "incubator",
+      triggersEvent: "incubatorAccepted",
     },
   },
 

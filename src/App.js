@@ -1,3 +1,5 @@
+import GameEventPopup, { checkEventTrigger } from './Components/Gameeventpopup';
+import EndGameScoreBreakdown from './Components/EndGameScoreBreakdown';
 import React, { useState, useEffect } from "react";
 import {
   CheckCircle,
@@ -1115,6 +1117,9 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   const [showReport, setShowReport] = useState(initialData?.showReport || false);
   const [formError, setFormError] = useState("");
   const [ideaConfirmed, setIdeaConfirmed] = useState(initialData?.ideaConfirmed || false);
+  const [activeEvent, setActiveEvent] = useState(null);
+  const [shownEvents, setShownEvents] = useState(new Set(initialData?.shownEvents || []));
+  const [showEndGameScore, setShowEndGameScore] = useState(false);
 
   // Research mode specific state
   const [teamProfiles, setTeamProfiles] = useState(initialData?.teamProfiles || ["", "", ""]);
@@ -1149,7 +1154,24 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
     completedActivities: [],
     trl: config.gameInfo.startingTRL || 3,
   });
-
+// ============================================
+  // EVENT SYSTEM - Check and trigger events
+  // ============================================
+  const checkAndTriggerEvents = (context) => {
+    if (!config?.gameEvents) return;
+    
+    for (const [eventId, eventConfig] of Object.entries(config.gameEvents)) {
+      // Skip if already shown
+      if (shownEvents.has(eventId)) continue;
+      
+      // Check if event should trigger
+      if (checkEventTrigger(eventConfig, context)) {
+        setActiveEvent({ id: eventId, ...eventConfig });
+        setShownEvents(prev => new Set([...prev, eventId]));
+        break; // Only show one event at a time
+      }
+    }
+  };
   const licenceUnlocked =
     teamData.completedActivities?.includes("licenceNegotiation") ||
     activities.licenceNegotiation;
@@ -1188,11 +1210,34 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
         diversityEventSeen,
         startupIdea,
         teamData,
+        shownEvents: Array.from(shownEvents),
       });
     }
   }, [teamName, founders, office, legalForm, currentRound, showReport, ideaConfirmed, 
       teamProfiles, licenceAgreement, hiredProfiles, diversityEventSeen, startupIdea, teamData]);
+// Check for round-start events
+  useEffect(() => {
+    if (currentRound > 0 && ideaConfirmed && !showReport) {
+      checkAndTriggerEvents({
+        currentRound,
+        isRoundStart: true,
+        validations: teamData?.validationCount || 0,
+        interviews: teamData?.interviewCount || 0,
+        cash: teamData?.cash || config.gameInfo.startingCapital,
+        founderEquity: 100 - (progress?.investorEquity || 0),
+      });
+    }
+  }, [currentRound, ideaConfirmed, showReport]);
 
+  // Check for end game score display
+  useEffect(() => {
+    if (currentRound === config.gameInfo.totalRounds && showReport && !showEndGameScore) {
+      const timer = setTimeout(() => {
+        setShowEndGameScore(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentRound, showReport, showEndGameScore]);
   useEffect(() => {
     if (
       isResearchMode &&
@@ -1206,10 +1251,29 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   }, [currentRound, diversityEventSeen, ideaConfirmed, showReport]);
 
   const handleActivityToggle = (activityKey) => {
-    setActivities((prev) => ({
-      ...prev,
-      [activityKey]: !prev[activityKey],
-    }));
+    setActivities((prev) => {
+      const newActivities = {
+        ...prev,
+        [activityKey]: !prev[activityKey],
+      };
+      
+      // Check for activity-triggered events when activity is enabled
+      if (newActivities[activityKey]) {
+        const activity = config.activities[activityKey];
+        if (activity?.triggersEvent && config.gameEvents) {
+          const eventConfig = config.gameEvents[activity.triggersEvent];
+          if (eventConfig && !shownEvents.has(activity.triggersEvent)) {
+            // Delay slightly so the checkbox updates first
+            setTimeout(() => {
+              setActiveEvent({ id: activity.triggersEvent, ...eventConfig });
+              setShownEvents(prev => new Set([...prev, activity.triggersEvent]));
+            }, 300);
+          }
+        }
+      }
+      
+      return newActivities;
+    });
   };
 
   const handleHireProfile = (profileId) => {
@@ -1547,6 +1611,49 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   if (showReport) {
     return (
       <Shell currentRound={currentRound} teamName={teamName} onReset={onReset}>
+        {/* End Game Score Breakdown Modal */}
+        {showEndGameScore && currentRound === config.gameInfo.totalRounds && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.9)",
+              backdropFilter: "blur(10px)",
+              zIndex: 9999,
+              overflowY: "auto",
+              padding: "2rem",
+            }}
+          >
+            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+              <EndGameScoreBreakdown
+                teamData={teamData}
+                progress={progress}
+                config={config}
+              />
+              <button
+                onClick={() => setShowEndGameScore(false)}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  padding: "1rem",
+                  marginTop: "1rem",
+                  background: "#7c3aed",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Close Score Breakdown
+              </button>
+            </div>
+          </div>
+        )}
         <SectionCard
           title="Progress Report"
           description={`${teamName} - Round ${currentRound}`}
@@ -1725,12 +1832,19 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
               >
                 Continue to round {currentRound + 1}
               </button>
-            ) : (
+          ) : (
               <div className="text-center" style={{ padding: "1rem 0" }}>
                 <p className="summary-label">🎉 Game complete!</p>
                 <p className="summary-hint">
                   Judges will discuss your final score.
                 </p>
+                <button
+                  onClick={() => setShowEndGameScore(true)}
+                  className="btn btn-primary"
+                  style={{ marginTop: "1rem" }}
+                >
+                  View Score Breakdown
+                </button>
               </div>
             )}
 
@@ -1756,6 +1870,16 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   // ============================================
   return (
     <Shell currentRound={currentRound} teamName={teamName} onReset={onReset}>
+      {activeEvent && (
+        <GameEventPopup
+          event={activeEvent}
+          onDismiss={() => setActiveEvent(null)}
+          onAction={(handler) => {
+            console.log('Event action:', handler);
+          }}
+        />
+      )}
+
       {showDiversityEvent && isResearchMode && (
         <TeamDiversityEvent
           config={config}
@@ -2036,42 +2160,38 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
               max="100"
             />
           </div>
-          {!isResearchMode && (
-            <>
-              <div className="form-group">
-                <label className="form-label">Bank loan</label>
-                <input
-                  type="number"
-                  className="form-input"
-                  value={funding.loan}
-                  onChange={(e) =>
-                    setFunding((prev) => ({
-                      ...prev,
-                      loan: e.target.value,
-                    }))
-                  }
-                  placeholder="€"
-                  min="0"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Loan interest (%)</label>
-                <input
-                  type="number"
-                  className="form-input"
-                  value={funding.loanInterest}
-                  onChange={(e) =>
-                    setFunding((prev) => ({
-                      ...prev,
-                      loanInterest: e.target.value,
-                    }))
-                  }
-                  placeholder="%"
-                  min="0"
-                />
-              </div>
-            </>
-          )}
+         <div className="form-group">
+            <label className="form-label">Bank loan</label>
+            <input
+              type="number"
+              className="form-input"
+              value={funding.loan}
+              onChange={(e) =>
+                setFunding((prev) => ({
+                  ...prev,
+                  loan: e.target.value,
+                }))
+              }
+              placeholder="€"
+              min="0"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Loan interest (%)</label>
+            <input
+              type="number"
+              className="form-input"
+              value={funding.loanInterest}
+              onChange={(e) =>
+                setFunding((prev) => ({
+                  ...prev,
+                  loanInterest: e.target.value,
+                }))
+              }
+              placeholder="%"
+              min="0"
+            />
+          </div>
         </div>
       </SectionCard>
 

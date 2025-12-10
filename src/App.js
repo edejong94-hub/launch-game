@@ -1237,9 +1237,8 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   teamData,
   progress,
   checkAndTriggerEvents,
-  config.gameInfo.startingCapital
+  shownEvents
 ]);
-
   // Check for end game score display
   useEffect(() => {
     if (currentRound === config.gameInfo.totalRounds && showReport && !showEndGameScore) {
@@ -1264,7 +1263,6 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   diversityEventSeen,
   ideaConfirmed,
   showReport,
-  isResearchMode
 ]);
 
   const handleActivityToggle = (activityKey) => {

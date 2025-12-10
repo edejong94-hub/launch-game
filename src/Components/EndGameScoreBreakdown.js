@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  TrendingUp,
-  Users,
-  Beaker,
-  Target,
-  DollarSign,
-  Award,
   ChevronUp,
-  ChevronDown,
+  ChevronDown
 } from "react-feather";
+
 
 // End game scoring configuration
 const SCORING_CONFIG = {

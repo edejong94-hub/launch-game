@@ -1154,10 +1154,20 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
     completedActivities: [],
     trl: config.gameInfo.startingTRL || 3,
   });
+  useEffect(() => {
+  console.log(
+    '[DEBUG] round effect',
+    'currentRound =', currentRound,
+    'ideaConfirmed =', ideaConfirmed,
+    'showReport =', showReport
+  );
+}, [currentRound, ideaConfirmed, showReport]);
 // ============================================
   // EVENT SYSTEM - Check and trigger events
   // ============================================
   const checkAndTriggerEvents = (context) => {
+      console.log('checkAndTriggerEvents called with:', context);  // ADD
+  console.log('config.gameEvents:', config.gameEvents);  // ADD
     if (!config?.gameEvents) return;
     
     for (const [eventId, eventConfig] of Object.entries(config.gameEvents)) {
@@ -1251,7 +1261,6 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   }, [currentRound, diversityEventSeen, ideaConfirmed, showReport]);
 
   const handleActivityToggle = (activityKey) => {
-    console.log('Toggle:', activityKey);
     setActivities((prev) => {
       const newActivities = {
         ...prev,
@@ -1261,8 +1270,6 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
       // Check for activity-triggered events when activity is enabled
       if (newActivities[activityKey]) {
         const activity = config.activities[activityKey];
-              console.log('Activity:', activity);  // ADD THIS
-      console.log('triggersEvent:', activity?.triggersEvent);  // ADD THIS
         if (activity?.triggersEvent && config.gameEvents) {
           const eventConfig = config.gameEvents[activity.triggersEvent];
           if (eventConfig && !shownEvents.has(activity.triggersEvent)) {

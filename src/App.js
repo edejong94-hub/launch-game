@@ -1120,7 +1120,8 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   const [activeEvent, setActiveEvent] = useState(null);
   const [shownEvents, setShownEvents] = useState(new Set(initialData?.shownEvents || []));
   const [showEndGameScore, setShowEndGameScore] = useState(false);
-
+  const totalRounds = config.gameInfo.totalRounds;
+  const startingCapital = config.gameInfo.startingCapital;
   // Research mode specific state
   const [teamProfiles, setTeamProfiles] = useState(initialData?.teamProfiles || ["", "", ""]);
   const [licenceAgreement, setLicenceAgreement] = useState(initialData?.licenceAgreement || null);
@@ -1197,7 +1198,7 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   );
 
   // Save session whenever important state changes
-  useEffect(() => {
+useEffect(() => {
     if (teamName) {
       saveSession({
         teamName,
@@ -1216,8 +1217,22 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
         shownEvents: Array.from(shownEvents),
       });
     }
-  }, [teamName, founders, office, legalForm, currentRound, showReport, ideaConfirmed, 
-      teamProfiles, licenceAgreement, hiredProfiles, diversityEventSeen, startupIdea, teamData]);
+}, [
+  teamName,
+  founders,
+  office,
+  legalForm,
+  currentRound,
+  showReport,
+  ideaConfirmed,
+  teamProfiles,
+  licenceAgreement,
+  hiredProfiles,
+  diversityEventSeen,
+  startupIdea,
+  teamData,
+  shownEvents      // <-- REQUIRED
+]);
 // Check for round-start events
   useEffect(() => {
   if (currentRound > 0 && ideaConfirmed && !showReport) {
@@ -1240,14 +1255,15 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   shownEvents
 ]);
   // Check for end game score display
-  useEffect(() => {
-    if (currentRound === config.gameInfo.totalRounds && showReport && !showEndGameScore) {
-      const timer = setTimeout(() => {
-        setShowEndGameScore(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-     }, [currentRound, showReport, showEndGameScore, config.gameInfo.totalRounds]);
+useEffect(() => {
+  if (currentRound === totalRounds && showReport && !showEndGameScore) {
+    const timer = setTimeout(() => {
+      setShowEndGameScore(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }
+}, [currentRound, showReport, showEndGameScore, totalRounds]);
+
   useEffect(() => {
     if (
       isResearchMode &&

@@ -1251,6 +1251,7 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   }, [currentRound, diversityEventSeen, ideaConfirmed, showReport]);
 
   const handleActivityToggle = (activityKey) => {
+    console.log('Toggle:', activityKey);
     setActivities((prev) => {
       const newActivities = {
         ...prev,
@@ -1260,6 +1261,8 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
       // Check for activity-triggered events when activity is enabled
       if (newActivities[activityKey]) {
         const activity = config.activities[activityKey];
+              console.log('Activity:', activity);  // ADD THIS
+      console.log('triggersEvent:', activity?.triggersEvent);  // ADD THIS
         if (activity?.triggersEvent && config.gameEvents) {
           const eventConfig = config.gameEvents[activity.triggersEvent];
           if (eventConfig && !shownEvents.has(activity.triggersEvent)) {

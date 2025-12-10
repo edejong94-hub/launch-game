@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, TrendingUp, Users, Beaker, Target, DollarSign, Award, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  TrendingUp,
+  Users,
+  Beaker,
+  Target,
+  DollarSign,
+  Award,
+  ChevronUp,
+  ChevronDown,
+} from "react-feather";
 
 // End game scoring configuration
 const SCORING_CONFIG = {

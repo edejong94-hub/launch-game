@@ -1154,14 +1154,6 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
     completedActivities: [],
     trl: config.gameInfo.startingTRL || 3,
   });
-  useEffect(() => {
-  console.log(
-    '[DEBUG] round effect',
-    'currentRound =', currentRound,
-    'ideaConfirmed =', ideaConfirmed,
-    'showReport =', showReport
-  );
-}, [currentRound, ideaConfirmed, showReport]);
 // ============================================
   // EVENT SYSTEM - Check and trigger events
   // ============================================
@@ -1238,8 +1230,15 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
       founderEquity: 100 - (progress?.investorEquity || 0),
     });
   }
-}, [currentRound, ideaConfirmed, showReport, teamData, progress, checkAndTriggerEvents]);
-
+}, [
+  currentRound,
+  ideaConfirmed,
+  showReport,
+  teamData,
+  progress,
+  checkAndTriggerEvents,
+  config.gameInfo.startingCapital
+]);
 
   // Check for end game score display
   useEffect(() => {
@@ -1249,7 +1248,7 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [currentRound, showReport, showEndGameScore]);
+     }, [currentRound, showReport, showEndGameScore, config.gameInfo.totalRounds]);
   useEffect(() => {
     if (
       isResearchMode &&
@@ -1260,7 +1259,13 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
     ) {
       setShowDiversityEvent(true);
     }
-  }, [currentRound, diversityEventSeen, ideaConfirmed, showReport]);
+}, [
+  currentRound,
+  diversityEventSeen,
+  ideaConfirmed,
+  showReport,
+  isResearchMode
+]);
 
   const handleActivityToggle = (activityKey) => {
     setActivities((prev) => {

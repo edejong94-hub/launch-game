@@ -1121,7 +1121,8 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   const [shownEvents, setShownEvents] = useState(new Set(initialData?.shownEvents || []));
   const [showEndGameScore, setShowEndGameScore] = useState(false);
   const totalRounds = config.gameInfo.totalRounds;
-  const startingCapital = config.gameInfo.startingCapital;
+const startingCapital = config.gameInfo.startingCapital;
+ 
   // Research mode specific state
   const [teamProfiles, setTeamProfiles] = useState(initialData?.teamProfiles || ["", "", ""]);
   const [licenceAgreement, setLicenceAgreement] = useState(initialData?.licenceAgreement || null);
@@ -1234,14 +1235,14 @@ useEffect(() => {
   shownEvents      // <-- REQUIRED
 ]);
 // Check for round-start events
-  useEffect(() => {
+useEffect(() => {
   if (currentRound > 0 && ideaConfirmed && !showReport) {
     checkAndTriggerEvents({
       currentRound,
       isRoundStart: true,
       validations: teamData?.validationCount || 0,
       interviews: teamData?.interviewCount || 0,
-      cash: teamData?.cash || config.gameInfo.startingCapital,
+      cash: teamData?.cash || startingCapital,
       founderEquity: 100 - (progress?.investorEquity || 0),
     });
   }
@@ -1252,8 +1253,10 @@ useEffect(() => {
   teamData,
   progress,
   checkAndTriggerEvents,
-  shownEvents
+  shownEvents,
+  startingCapital     // REQUIRED
 ]);
+
   // Check for end game score display
 useEffect(() => {
   if (currentRound === totalRounds && showReport && !showEndGameScore) {

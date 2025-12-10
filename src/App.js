@@ -1,6 +1,6 @@
 import GameEventPopup, { checkEventTrigger } from './Components/Gameeventpopup';
 import EndGameScoreBreakdown from './Components/EndGameScoreBreakdown';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   CheckCircle,
   AlertCircle,
@@ -1165,23 +1165,24 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
 // ============================================
   // EVENT SYSTEM - Check and trigger events
   // ============================================
-  const checkAndTriggerEvents = (context) => {
-      console.log('checkAndTriggerEvents called with:', context);  // ADD
-  console.log('config.gameEvents:', config.gameEvents);  // ADD
+  const checkAndTriggerEvents = useCallback(
+  (context) => {
+    console.log("checkAndTriggerEvents called with:", context);
+    console.log("config.gameEvents:", config.gameEvents);
     if (!config?.gameEvents) return;
-    
+
     for (const [eventId, eventConfig] of Object.entries(config.gameEvents)) {
-      // Skip if already shown
       if (shownEvents.has(eventId)) continue;
-      
-      // Check if event should trigger
+
       if (checkEventTrigger(eventConfig, context)) {
         setActiveEvent({ id: eventId, ...eventConfig });
-        setShownEvents(prev => new Set([...prev, eventId]));
-        break; // Only show one event at a time
+        setShownEvents((prev) => new Set([...prev, eventId]));
+        break;
       }
     }
-  };
+  },
+  [config.gameEvents, shownEvents]
+);
   const licenceUnlocked =
     teamData.completedActivities?.includes("licenceNegotiation") ||
     activities.licenceNegotiation;
@@ -1227,17 +1228,18 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
       teamProfiles, licenceAgreement, hiredProfiles, diversityEventSeen, startupIdea, teamData]);
 // Check for round-start events
   useEffect(() => {
-    if (currentRound > 0 && ideaConfirmed && !showReport) {
-      checkAndTriggerEvents({
-        currentRound,
-        isRoundStart: true,
-        validations: teamData?.validationCount || 0,
-        interviews: teamData?.interviewCount || 0,
-        cash: teamData?.cash || config.gameInfo.startingCapital,
-        founderEquity: 100 - (progress?.investorEquity || 0),
-      });
-    }
-  }, [currentRound, ideaConfirmed, showReport]);
+  if (currentRound > 0 && ideaConfirmed && !showReport) {
+    checkAndTriggerEvents({
+      currentRound,
+      isRoundStart: true,
+      validations: teamData?.validationCount || 0,
+      interviews: teamData?.interviewCount || 0,
+      cash: teamData?.cash || config.gameInfo.startingCapital,
+      founderEquity: 100 - (progress?.investorEquity || 0),
+    });
+  }
+}, [currentRound, ideaConfirmed, showReport, teamData, progress, checkAndTriggerEvents]);
+
 
   // Check for end game score display
   useEffect(() => {

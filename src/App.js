@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { db } from "./firebase";
 import foundedLogo from "./logo.svg";  
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 
 // Import configurations
 import { STARTUP_CONFIG } from "./Configs/startup-config";
@@ -1257,16 +1257,27 @@ useEffect(() => {
   startingCapital     // REQUIRED
 ]);
 
-  // Check for end game score display
+// Check for end game score display - wait for facilitator release
 useEffect(() => {
-  if (currentRound === totalRounds && showReport && !showEndGameScore) {
-    const timer = setTimeout(() => {
-      setShowEndGameScore(true);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }
-}, [currentRound, showReport, showEndGameScore, totalRounds]);
-
+// Only listen when game is complete and showing report
+if (currentRound === totalRounds && showReport) {
+const gameId = getGameId();
+  // Listen for facilitator to release scores
+  const unsubscribe = onSnapshot(
+    doc(db, "games", gameId, "settings"),
+    (docSnap) => {
+      if (docSnap.exists() && docSnap.data().scoresReleased) {
+        setShowEndGameScore(true);
+      }
+    },
+    (error) => {
+      console.error("Error listening for score release:", error);
+    }
+  );
+  
+  return () => unsubscribe();
+}
+}, [currentRound, showReport, totalRounds]);
   useEffect(() => {
     if (
       isResearchMode &&
@@ -1866,11 +1877,13 @@ useEffect(() => {
               >
                 Continue to round {currentRound + 1}
               </button>
-          ) : (
-              <div className="text-center" style={{ padding: "1rem 0" }}>
-                <p className="summary-label">🎉 Game complete!</p>
+      ) : (
+          <div className="text-center" style={{ padding: "1rem 0" }}>
+            <p className="summary-label">🎉 Game complete!</p>
+            {showEndGameScore ? (
+              <>
                 <p className="summary-hint">
-                  Judges will discuss your final score.
+                  Final scores are available!
                 </p>
                 <button
                   onClick={() => setShowEndGameScore(true)}
@@ -1879,8 +1892,29 @@ useEffect(() => {
                 >
                   View Score Breakdown
                 </button>
+              </>
+            ) : (
+              <div style={{ marginTop: "1rem" }}>
+                <div style={{
+                  display: "inline-block",
+                  width: "24px",
+                  height: "24px",
+                  border: "3px solid #e2e8f0",
+                  borderTopColor: "#7c3aed",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                  marginBottom: "0.75rem"
+                }} />
+                <p className="summary-hint">
+                  ⏳ Waiting for facilitator to release final scores...
+                </p>
+                <p className="summary-hint" style={{ fontSize: "0.75rem", marginTop: "0.5rem", opacity: 0.7 }}>
+                  Your score breakdown will appear automatically when released.
+                </p>
               </div>
             )}
+          </div>
+        )}
 
             {formError && (
               <div

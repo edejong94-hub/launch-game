@@ -554,7 +554,7 @@ const StatTile = ({ label, value, sub, tone = "default" }) => {
 // ============================================
 // RESEARCH MODE: PROFILE SELECTION COMPONENT
 // ============================================
-const ProfileSelection = ({ config, selectedProfiles, onProfilesChange }) => {
+const ProfileSelection = ({ config, selectedProfiles, onProfilesChange, founderCount }) => {
   const profiles = config.founderProfiles;
 
   const handleProfileSelect = (index, profileId) => {
@@ -570,7 +570,7 @@ const ProfileSelection = ({ config, selectedProfiles, onProfilesChange }) => {
       icon={<Users size={20} />}
     >
       <div style={{ display: "grid", gap: "1.5rem" }}>
-        {[0, 1, 2].map((index) => (
+        {Array.from({ length: founderCount }, (_, index) => index).map((index) => (
           <div
             key={index}
             style={{
@@ -1920,6 +1920,7 @@ const gameId = getGameId();
             config={config}
             selectedProfiles={teamProfiles}
             onProfilesChange={setTeamProfiles}
+            founderCount={founders}
           />
         )}
 

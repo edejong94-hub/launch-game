@@ -352,7 +352,7 @@ const calculateProgress = (teamData, config) => {
     investorAppeal,
     employees,
     hasSenior,
-    investorEquity: Number(funding.investorEquity || 0),
+    investorEquity: (teamData.investorEquity || 0) + Number(funding.investorEquity || 0),
     currentTRL,
     trlBonus,
   };
@@ -1148,14 +1148,15 @@ const startingCapital = config.gameInfo.startingCapital;
   });
 
   const [teamData, setTeamData] = useState(initialData?.teamData || {
-    cash: config.gameInfo.startingCapital,
-    phase: 1,
-    employees: 0,
-    hasSenior: false,
-    seniorUnlocked: false,
-    completedActivities: [],
-    trl: config.gameInfo.startingTRL || 3,
-  });
+  cash: config.gameInfo.startingCapital,
+  phase: 1,
+  employees: 0,
+  hasSenior: false,
+  seniorUnlocked: false,
+  completedActivities: [],
+  trl: config.gameInfo.startingTRL || 3,
+  investorEquity: 0,  // Track cumulative equity given away
+});
 // ============================================
   // EVENT SYSTEM - Check and trigger events
   // ============================================
@@ -1362,27 +1363,34 @@ const gameId = getGameId();
     if (activities.hireSenior && seniorUnlocked) {
       hasSenior = true;
     }
+    const previousInvestorEquity = teamData.investorEquity || 0;
+    const newEquityThisRound = Number(funding.investorEquity || 0);
+    const totalInvestorEquity = previousInvestorEquity + newEquityThisRound;
 
     const newTeamData = {
-      ...teamData,
-      teamName,
-      founders,
-      office,
-      activities,
-      round: currentRound,
-      cash: progress.cash,
-      startupIdea,
-      legalForm,
-      employees,
-      hasSenior,
-      seniorUnlocked,
-      juniorHiresThisRound: juniorHires,
-      funding,
-      interviewCount: progress.interviewsTotal,
-      validationCount: progress.validationsTotal,
-      completedActivities: newCompletedActivities,
-      trl: progress.currentTRL,
-    };
+  ...teamData,
+  teamName,
+  founders,
+  office,
+  activities,
+  round: currentRound,
+  cash: progress.cash,
+  startupIdea,
+  legalForm,
+  employees,
+  hasSenior,
+  seniorUnlocked,
+  juniorHiresThisRound: juniorHires,
+  funding: {
+    ...funding,
+    investorEquity: newEquityThisRound,  // Keep this round's input
+  },
+  investorEquity: totalInvestorEquity,  // Cumulative total at top level
+  interviewCount: progress.interviewsTotal,
+  validationCount: progress.validationsTotal,
+  completedActivities: newCompletedActivities,
+  trl: progress.currentTRL,
+};
 
     if (isResearchMode) {
       newTeamData.teamProfiles = teamProfiles;
@@ -2212,22 +2220,35 @@ const gameId = getGameId();
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Equity given (%)</label>
-            <input
-              type="number"
-              className="form-input"
-              value={funding.investorEquity}
-              onChange={(e) =>
-                setFunding((prev) => ({
-                  ...prev,
-                  investorEquity: e.target.value,
-                }))
-              }
-              placeholder="%"
-              min="0"
-              max="100"
-            />
-          </div>
+  <label className="form-label">Equity given this round (%)</label>
+  <input
+    type="number"
+    className="form-input"
+    value={funding.investorEquity}
+    onChange={(e) =>
+      setFunding((prev) => ({
+        ...prev,
+        investorEquity: e.target.value,
+      }))
+    }
+    placeholder="%"
+    min="0"
+    max={100 - (teamData.investorEquity || 0)}
+  />
+  {(teamData.investorEquity > 0 || Number(funding.investorEquity) > 0) && (
+    <p style={{ 
+      fontSize: '0.75rem', 
+      color: '#64748b', 
+      marginTop: '0.25rem' 
+    }}>
+      {teamData.investorEquity > 0 && (
+        <span>Previously given: {teamData.investorEquity}% · </span>
+      )}
+      Total: {(teamData.investorEquity || 0) + Number(funding.investorEquity || 0)}% · 
+      Founders retain: {100 - (teamData.investorEquity || 0) - Number(funding.investorEquity || 0)}%
+    </p>
+  )}
+</div>
          <div className="form-group">
             <label className="form-label">Bank loan</label>
             <input

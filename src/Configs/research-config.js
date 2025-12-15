@@ -712,33 +712,6 @@ lowRunwayWarning: {
   },
 
   // ============================================
-  // EMPLOYMENT STATUS
-  // ============================================
-  employmentStatus: {
-    university: {
-      name: "University Employee",
-      hoursPerRound: 500,
-      description: "Limited time due to teaching & research obligations",
-      labAccess: true,
-      grantEligible: true,
-    },
-    fulltime: {
-      name: "Full-time Founder",
-      hoursPerRound: 1000,
-      description: "Left university, full focus on startup",
-      labAccess: false,
-      grantEligible: false,
-    },
-    parttime: {
-      name: "Part-time (negotiated)",
-      hoursPerRound: 750,
-      description: "Reduced university role, negotiated arrangement",
-      labAccess: true,
-      grantEligible: true,
-    },
-  },
-
-  // ============================================
   // TRL LEVELS
   // ============================================
   trlLevels: {

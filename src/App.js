@@ -542,10 +542,14 @@ const StatTile = ({ label, value, sub, tone = "default" }) => {
   if (tone === "danger") toneClass += " danger";
   if (tone === "warning") toneClass += " warning";
 
+  // Check if value contains currency symbol
+  const isMoney = typeof value === 'string' && value.includes('€');
+  const valueStyle = isMoney ? { color: '#22c55e', fontWeight: '800' } : {};
+
   return (
     <div className={toneClass}>
       <p className="stat-label">{label}</p>
-      <p className="stat-value">{value}</p>
+      <p className="stat-value" style={valueStyle}>{value}</p>
       {sub && <p className="stat-sub">{sub}</p>}
     </div>
   );
@@ -1134,7 +1138,7 @@ const GroupedActivities = ({
                       </div>
                       <div className="activity-cost">
                         <span>{activity.costTime} h</span>
-                        <span>€{activity.costMoney.toLocaleString()}</span>
+                        <span style={{ color: '#22c55e', fontWeight: '700' }}>€{activity.costMoney.toLocaleString()}</span>
                       </div>
                       {activity.description && (
                         <p
@@ -2130,11 +2134,11 @@ const gameId = getGameId();
           <div className="summary-grid" style={{ marginTop: "2rem" }}>
             <div className="summary-item">
               <p className="summary-label">Costs this round</p>
-              <p className="summary-value">
+              <p className="summary-value" style={{ color: '#22c55e', fontWeight: '800' }}>
                 €{progress.totalMoneySpent.toLocaleString()}
               </p>
               {progress.totalSalaryCost > 0 && (
-                <p className="summary-hint">
+                <p className="summary-hint" style={{ color: '#22c55e', fontWeight: '600' }}>
                   Including €{progress.totalSalaryCost.toLocaleString()} salaries
                 </p>
               )}
@@ -2430,7 +2434,10 @@ const gameId = getGameId();
                       )}
                       {officeOption.name}
                     </div>
-                    <span className="office-badge">
+                    <span className="office-badge" style={{
+                      color: '#22c55e',
+                      fontWeight: '700'
+                    }}>
                       €{officeOption.cost}/round
                     </span>
                   </div>

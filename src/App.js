@@ -1132,6 +1132,8 @@ const GroupedActivities = ({
                   config
                 );
                 const isLocked = !unlockStatus.unlocked;
+                const isCompletedOneTime = activity.oneTimeOnly && (teamData.completedActivities?.includes(key) || false);
+                const cannotUncheck = activity.oneTimeOnly && checked;
 
                 return (
                   <label
@@ -1139,18 +1141,19 @@ const GroupedActivities = ({
                     className={
                       "activity-card" +
                       (checked && !isLocked ? " checked" : "") +
-                      (isLocked ? " opacity-60" : "")
+                      (isLocked ? " opacity-60" : "") +
+                      (isCompletedOneTime ? " opacity-75" : "")
                     }
                     style={{
-                      cursor: isLocked ? "not-allowed" : "pointer",
+                      cursor: isLocked || cannotUncheck ? "not-allowed" : "pointer",
                     }}
                   >
                     <input
                       type="checkbox"
                       checked={checked && !isLocked}
-                      disabled={isLocked}
+                      disabled={isLocked || cannotUncheck}
                       onChange={() => {
-                        if (!isLocked) {
+                        if (!isLocked && !cannotUncheck) {
                           onToggle(key);
                         }
                       }}
@@ -1189,6 +1192,14 @@ const GroupedActivities = ({
                           style={{ color: "#dc2626" }}
                         >
                           🔒 {unlockStatus.reason}
+                        </p>
+                      )}
+                      {activity.oneTimeOnly && checked && (
+                        <p
+                          className="activity-requirement"
+                          style={{ color: "#22c55e", fontWeight: 600 }}
+                        >
+                          ✓ One-time activity completed
                         </p>
                       )}
                     </div>
@@ -2222,52 +2233,93 @@ const gameId = getGameId();
             <div
               style={{
                 marginTop: "2rem",
-                padding: "1rem 1.25rem",
-                borderRadius: "12px",
-                border: "1px solid",
-                borderColor: progress.canEnterPhase2 ? "#16a34a" : "#f97316",
-                backgroundColor: progress.canEnterPhase2
-                  ? "#ecfdf3"
-                  : "#fff7ed",
+                padding: "1.5rem",
+                borderRadius: "16px",
+                border: "2px solid",
+                borderColor: progress.canEnterPhase2 ? "#22c55e" : "#f97316",
+                background: progress.canEnterPhase2
+                  ? "linear-gradient(145deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))"
+                  : "linear-gradient(145deg, rgba(249, 115, 22, 0.15), rgba(249, 115, 22, 0.05))",
               }}
             >
               <div
                 style={{
                   display: "flex",
-                  gap: "0.75rem",
+                  gap: "1rem",
                   alignItems: "flex-start",
                 }}
               >
                 {progress.canEnterPhase2 ? (
-                  <CheckCircle size={18} color="#16a34a" />
+                  <CheckCircle size={24} color="#22c55e" />
                 ) : (
-                  <AlertCircle size={18} color="#f97316" />
+                  <AlertCircle size={24} color="#f97316" />
                 )}
-                <div>
-                  <p className="summary-label">
+                <div style={{ flex: 1 }}>
+                  <p style={{
+                    fontSize: "1.05rem",
+                    fontWeight: 700,
+                    color: progress.canEnterPhase2 ? "#22c55e" : "#f97316",
+                    marginBottom: "0.75rem"
+                  }}>
                     {config.labels.phaseGateTitle}
                   </p>
                   <ul
-                    className="summary-hint"
-                    style={{ marginTop: "0.5rem" }}
+                    style={{
+                      marginTop: "0.75rem",
+                      listStyle: "none",
+                      padding: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.5rem"
+                    }}
                   >
                     {isResearchMode ? (
                       <>
-                        <li>
-                          TRL: {progress.currentTRL}/
-                          {config.phases.phase1.trlRequired}
+                        <li style={{
+                          color: "#e5e5e5",
+                          fontSize: "0.95rem",
+                          fontWeight: 500
+                        }}>
+                          TRL: <strong style={{ color: "#c1fe00" }}>{progress.currentTRL}/{config.phases.phase1.trlRequired}</strong>
                         </li>
-                        <li>Validations: {progress.validationsTotal}/1</li>
-                        <li>Interviews: {progress.interviewsTotal}/2</li>
+                        <li style={{
+                          color: "#e5e5e5",
+                          fontSize: "0.95rem",
+                          fontWeight: 500
+                        }}>
+                          Validations: <strong style={{ color: "#c1fe00" }}>{progress.validationsTotal}/1</strong>
+                        </li>
+                        <li style={{
+                          color: "#e5e5e5",
+                          fontSize: "0.95rem",
+                          fontWeight: 500
+                        }}>
+                          Interviews: <strong style={{ color: "#c1fe00" }}>{progress.interviewsTotal}/2</strong>
+                        </li>
                       </>
                     ) : (
                       <>
-                        <li>
-                          Development: {progress.developmentHours}/
-                          {config.phases.phase1.hoursRequired}h
+                        <li style={{
+                          color: "#e5e5e5",
+                          fontSize: "0.95rem",
+                          fontWeight: 500
+                        }}>
+                          Development: <strong style={{ color: "#c1fe00" }}>{progress.developmentHours}/{config.phases.phase1.hoursRequired}h</strong>
                         </li>
-                        <li>Validations: {progress.validationsTotal}/1</li>
-                        <li>Interviews: {progress.interviewsTotal}/4</li>
+                        <li style={{
+                          color: "#e5e5e5",
+                          fontSize: "0.95rem",
+                          fontWeight: 500
+                        }}>
+                          Validations: <strong style={{ color: "#c1fe00" }}>{progress.validationsTotal}/1</strong>
+                        </li>
+                        <li style={{
+                          color: "#e5e5e5",
+                          fontSize: "0.95rem",
+                          fontWeight: 500
+                        }}>
+                          Interviews: <strong style={{ color: "#c1fe00" }}>{progress.interviewsTotal}/4</strong>
+                        </li>
                       </>
                     )}
                   </ul>

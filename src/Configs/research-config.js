@@ -1075,6 +1075,7 @@ lowRunwayWarning: {
       requiresContract: "incubatorApp",
       expert: "incubator",
       triggersEvent: "incubatorAccepted",
+      oneTimeOnly: true,
     },
   },
 

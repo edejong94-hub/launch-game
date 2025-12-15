@@ -1264,7 +1264,7 @@ if (currentRound === totalRounds && showReport) {
 const gameId = getGameId();
   // Listen for facilitator to release scores
   const unsubscribe = onSnapshot(
-    doc(db, "games", gameId, "settings"),
+    doc(db, "games", gameId, "settings", "game"),
     (docSnap) => {
       if (docSnap.exists() && docSnap.data().scoresReleased) {
         setShowEndGameScore(true);

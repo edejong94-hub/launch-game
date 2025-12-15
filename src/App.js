@@ -1827,16 +1827,90 @@ const gameId = getGameId();
             </div>
             <div className="form-group">
               <label className="form-label">Number of founders</label>
-              <input
-                type="number"
-                className="form-input"
-                min="1"
-                max="6"
-                value={founders}
-                onChange={(e) =>
-                  setFounders(parseInt(e.target.value, 10) || 1)
-                }
-              />
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setFounders(Math.max(1, founders - 1))}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '8px',
+                    background: founders <= 1 ? '#f1f5f9' : 'white',
+                    color: founders <= 1 ? '#94a3b8' : '#334155',
+                    fontSize: '1.25rem',
+                    fontWeight: '600',
+                    cursor: founders <= 1 ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  disabled={founders <= 1}
+                  onMouseEnter={(e) => {
+                    if (founders > 1) {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.background = '#f0f0ff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (founders > 1) {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.background = 'white';
+                    }
+                  }}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  max="6"
+                  value={founders}
+                  onChange={(e) =>
+                    setFounders(parseInt(e.target.value, 10) || 1)
+                  }
+                  style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setFounders(Math.min(6, founders + 1))}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '8px',
+                    background: founders >= 6 ? '#f1f5f9' : 'white',
+                    color: founders >= 6 ? '#94a3b8' : '#334155',
+                    fontSize: '1.25rem',
+                    fontWeight: '600',
+                    cursor: founders >= 6 ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  disabled={founders >= 6}
+                  onMouseEnter={(e) => {
+                    if (founders < 6) {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.background = '#f0f0ff';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (founders < 6) {
+                      e.target.style.borderColor = '#e2e8f0';
+                      e.target.style.background = 'white';
+                    }
+                  }}
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
         </SectionCard>

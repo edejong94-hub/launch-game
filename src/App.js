@@ -578,17 +578,19 @@ const ProfileSelection = ({ config, selectedProfiles, onProfilesChange, founderC
           <div
             key={index}
             style={{
-              padding: "1rem",
-              backgroundColor: "#f8fafc",
-              borderRadius: "12px",
-              border: "1px solid #e2e8f0",
+              padding: "1.25rem",
+              background: "linear-gradient(145deg, #0a0a0a, #141414)",
+              borderRadius: "16px",
+              border: "1px solid #262626",
             }}
           >
             <p
               style={{
-                fontWeight: 600,
-                marginBottom: "0.75rem",
-                color: "#334155",
+                fontWeight: 700,
+                marginBottom: "1rem",
+                color: "#e5e5e5",
+                fontSize: "1.05rem",
+                letterSpacing: "-0.01em"
               }}
             >
               Founder {index + 1}
@@ -606,33 +608,52 @@ const ProfileSelection = ({ config, selectedProfiles, onProfilesChange, founderC
                   type="button"
                   onClick={() => handleProfileSelect(index, id)}
                   style={{
-                    padding: "0.75rem",
-                    borderRadius: "8px",
+                    padding: "1rem",
+                    borderRadius: "12px",
                     border:
                       selectedProfiles[index] === id
-                        ? "2px solid #7c3aed"
-                        : "1px solid #e2e8f0",
-                    backgroundColor:
-                      selectedProfiles[index] === id ? "#f3e8ff" : "white",
+                        ? "2px solid #c1fe00"
+                        : "1px solid #262626",
+                    background:
+                      selectedProfiles[index] === id
+                        ? "linear-gradient(145deg, rgba(193, 254, 0, 0.15), rgba(193, 254, 0, 0.05))"
+                        : "linear-gradient(145deg, #050505, #0b0b0b)",
                     cursor: "pointer",
-                    textAlign: "left",
-                    transition: "all 0.15s ease",
+                    textAlign: "center",
+                    transition: "all 0.2s ease",
+                    boxShadow: selectedProfiles[index] === id
+                      ? "0 0 20px rgba(193, 254, 0, 0.3)"
+                      : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedProfiles[index] !== id) {
+                      e.currentTarget.style.borderColor = "#404040";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedProfiles[index] !== id) {
+                      e.currentTarget.style.borderColor = "#262626";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }
                   }}
                 >
                   <span
                     style={{
-                      fontSize: "1.5rem",
+                      fontSize: "2rem",
                       display: "block",
-                      marginBottom: "0.25rem",
+                      marginBottom: "0.5rem",
                     }}
                   >
                     {profile.icon}
                   </span>
                   <span
                     style={{
-                      fontWeight: 500,
+                      fontWeight: 600,
                       fontSize: "0.875rem",
-                      color: "#334155",
+                      color: selectedProfiles[index] === id ? "#e5e5e5" : "#a3a3a3",
+                      display: "block",
+                      lineHeight: "1.3"
                     }}
                   >
                     {profile.name}
@@ -644,36 +665,40 @@ const ProfileSelection = ({ config, selectedProfiles, onProfilesChange, founderC
         ))}
       </div>
 
-      {selectedProfiles.filter((p) => p).length === 3 && (
+      {selectedProfiles.filter((p) => p).length === founderCount && (
         <div
           style={{
-            marginTop: "1rem",
-            padding: "1rem",
-            backgroundColor: "#ecfdf5",
-            borderRadius: "8px",
-            border: "1px solid #a7f3d0",
+            marginTop: "1.5rem",
+            padding: "1.25rem",
+            background: "linear-gradient(145deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))",
+            borderRadius: "12px",
+            border: "1px solid rgba(34, 197, 94, 0.3)",
           }}
         >
           <p
             style={{
-              fontWeight: 600,
-              color: "#065f46",
-              marginBottom: "0.5rem",
+              fontWeight: 700,
+              color: "#22c55e",
+              marginBottom: "0.75rem",
+              fontSize: "0.95rem",
             }}
           >
-            Team Composition
+            ✓ Team Composition Complete
           </p>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             {selectedProfiles.map((profileId, i) => {
               const profile = profiles[profileId];
               return profile ? (
                 <span
                   key={i}
                   style={{
-                    padding: "0.25rem 0.75rem",
-                    backgroundColor: "white",
+                    padding: "0.5rem 1rem",
+                    background: "linear-gradient(145deg, #0a0a0a, #141414)",
+                    border: "1px solid #262626",
                     borderRadius: "9999px",
                     fontSize: "0.875rem",
+                    color: "#e5e5e5",
+                    fontWeight: 500,
                   }}
                 >
                   {profile.icon} {profile.name}
@@ -707,17 +732,27 @@ const LicenceSelection = ({
       >
         <div
           style={{
-            padding: "2rem",
+            padding: "3rem 2rem",
             textAlign: "center",
-            backgroundColor: "#f8fafc",
-            borderRadius: "12px",
-            color: "#64748b",
+            background: "linear-gradient(145deg, #0a0a0a, #141414)",
+            borderRadius: "16px",
+            border: "1px solid #262626",
+            color: "#a3a3a3",
           }}
         >
-          <Lock size={32} style={{ margin: "0 auto 1rem", opacity: 0.5 }} />
-          <p>
-            Complete "TTO: Initial Discussion" and "Licence Agreement"
-            activities to unlock this section.
+          <Lock size={40} style={{
+            margin: "0 auto 1.5rem",
+            opacity: 0.6,
+            color: "#737373",
+            display: 'block'
+          }} />
+          <p style={{
+            fontSize: "0.95rem",
+            lineHeight: "1.6",
+            maxWidth: "400px",
+            margin: "0 auto"
+          }}>
+            Complete <strong style={{ color: "#c1fe00" }}>"TTO: Initial Discussion"</strong> and <strong style={{ color: "#c1fe00" }}>"Licence Agreement"</strong> activities to unlock this section.
           </p>
         </div>
       </SectionCard>
@@ -2513,27 +2548,52 @@ const gameId = getGameId();
         ) : (
           <div
             style={{
-              padding: "2rem",
+              padding: "3rem 2rem",
               textAlign: "center",
-              backgroundColor: "#f8fafc",
-              borderRadius: "12px",
-              color: "#64748b",
+              background: "linear-gradient(145deg, #0a0a0a, #141414)",
+              borderRadius: "16px",
+              border: "1px solid #262626",
+              color: "#a3a3a3",
             }}
           >
             <Lock
-              size={24}
-              style={{ margin: "0 auto 0.5rem", opacity: 0.5 }}
+              size={40}
+              style={{
+                margin: "0 auto 1.5rem",
+                opacity: 0.6,
+                color: "#737373",
+                display: 'block'
+              }}
             />
-            <p>
-              Meet the {isResearchMode ? "TTO" : "KVK"} expert first to unlock
-              this section.
+            <p style={{
+              fontSize: "0.95rem",
+              lineHeight: "1.6",
+              marginBottom: "1rem"
+            }}>
+              Meet the <strong style={{ color: "#c1fe00" }}>{isResearchMode ? "TTO" : "KVK"} expert</strong> first to unlock this section.
             </p>
-            <p style={{ marginTop: "0.5rem", fontWeight: 500 }}>
-              Current:{" "}
-              {legalForm
-                ? config.legalForms[legalForm].name
-                : "None"}
-            </p>
+            <div style={{
+              marginTop: "1.5rem",
+              paddingTop: "1.5rem",
+              borderTop: "1px solid #262626"
+            }}>
+              <p style={{
+                fontSize: "0.875rem",
+                color: "#737373",
+                marginBottom: "0.5rem"
+              }}>
+                Current:
+              </p>
+              <p style={{
+                fontSize: "1.125rem",
+                fontWeight: 600,
+                color: legalForm ? "#e5e5e5" : "#525252"
+              }}>
+                {legalForm
+                  ? config.legalForms[legalForm].name
+                  : "None"}
+              </p>
+            </div>
           </div>
         )}
       </SectionCard>

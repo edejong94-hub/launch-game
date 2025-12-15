@@ -228,6 +228,13 @@ const calculateProgress = (teamData, config) => {
   const hasSenior = !!teamData.hasSenior;
 
   let totalSalaryCost = 0;
+
+  // --- FOUNDER SALARY (based on employment status) ---
+  const empStatus = teamData.employmentStatus || 'university';
+  const foundersCount = teamData.founders || (isResearchMode ? 3 : 4);
+  const founderSalaryCost = getFounderSalaryCost(empStatus, foundersCount);
+  totalSalaryCost += founderSalaryCost;
+
   if (config.payroll) {
     if (employees > 0) {
       totalSalaryCost +=
@@ -286,6 +293,13 @@ const calculateProgress = (teamData, config) => {
     trlBonus += activity.trlBonus || 0;
     investorAppeal += activity.investorAppealBonus || 0;
   });
+
+  // --- EMPLOYMENT STATUS INVESTOR MODIFIER ---
+  const employmentModifier = getEmploymentInvestorModifier(
+    teamData.employmentStatus || 'university',
+    teamData.round || 1
+  );
+  investorAppeal += employmentModifier;
 
   // --- PRODUCTIVITY & HOURS ---
   const productivityMultiplier =
@@ -355,11 +369,25 @@ const calculateProgress = (teamData, config) => {
     investorEquity: (teamData.investorEquity || 0) + Number(funding.investorEquity || 0),
     currentTRL,
     trlBonus,
+    founderSalaryCost,
+    employmentStatus: teamData.employmentStatus || 'university',
+    maxHoursAvailable: getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || 3),
+    hoursOverLimit: totalTimeSpent > getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || 3),
+    employmentModifier,
+    hasLabAccess: hasLabAccess(teamData.employmentStatus || 'university'),
   };
 };
 
 // Check if an activity is unlocked based on prerequisites
 const isActivityUnlocked = (activityKey, activity, teamData, config) => {
+  // Check grant eligibility based on employment status
+  if (isResearchMode && !isGrantEligible(teamData.employmentStatus || 'university', activityKey)) {
+    return {
+      unlocked: false,
+      reason: '🏛️ Requires university affiliation (you left!)',
+    };
+  }
+
   if (activity.requiresActivity) {
     const requiredActivities = Array.isArray(activity.requiresActivity)
       ? activity.requiresActivity
@@ -420,6 +448,76 @@ const isOfficeAvailable = (officeKey, officeOption, teamData) => {
     }
   }
   return { available: true };
+};
+
+// ============================================
+// EMPLOYMENT STATUS HELPERS (University Dilemma)
+// ============================================
+const getAvailableHours = (status, founderCount) => {
+  const baseHours = {
+    university: 500,
+    parttime: 750,
+    fulltime: 1000,
+  }[status] || 500;
+  return baseHours * founderCount;
+};
+
+const getFounderSalaryCost = (status, founderCount) => {
+  const costPerFounder = {
+    university: 0,
+    parttime: 6000,
+    fulltime: 12000,
+  }[status] || 0;
+  return costPerFounder * founderCount;
+};
+
+const hasLabAccess = (status) => {
+  return status === 'university' || status === 'parttime';
+};
+
+const isGrantEligible = (status, activityId) => {
+  const academicOnlyGrants = ['grantTakeoff'];
+  if (!academicOnlyGrants.includes(activityId)) return true;
+  return status !== 'fulltime';
+};
+
+const getEmploymentInvestorModifier = (status, round) => {
+  if (status === 'fulltime') return 1;
+  if (status === 'parttime') return 0;
+  if (status === 'university' && round >= 3) return -1;
+  return 0;
+};
+
+const employmentStatusConfig = {
+  university: {
+    id: 'university',
+    name: 'University Employee',
+    icon: '🏛️',
+    hoursPerFounder: 500,
+    salaryPerFounder: 0,
+    features: ['Lab access (cheaper R&D)', 'NWO grants eligible', 'Job security'],
+    drawbacks: ['Only 500 hrs/founder', 'Teaching duties', 'TTO oversight'],
+  },
+  parttime: {
+    id: 'parttime',
+    name: 'Part-time (Negotiated)',
+    icon: '⚖️',
+    hoursPerFounder: 750,
+    salaryPerFounder: 6000,
+    features: ['Lab access', 'NWO grants eligible', '750 hrs/founder'],
+    drawbacks: ['€6,000/founder salary cost'],
+    requiresActivity: 'universityExit',
+  },
+  fulltime: {
+    id: 'fulltime',
+    name: 'Full-time Founder',
+    icon: '🚀',
+    hoursPerFounder: 1000,
+    salaryPerFounder: 12000,
+    features: ['1000 hrs/founder', 'Investor Appeal +1', 'Full independence'],
+    drawbacks: ['€12,000/founder salary', 'No lab access', 'No NWO grants'],
+    requiresActivity: 'universityExit',
+  },
 };
 
 // ============================================
@@ -1104,6 +1202,200 @@ const LoadingScreen = () => (
 
 
 // ============================================
+// EMPLOYMENT STATUS SELECTOR COMPONENT
+// ============================================
+const EmploymentStatusSelector = ({
+  currentStatus,
+  onStatusChange,
+  completedActivities = [],
+  currentRound,
+  founders,
+  cash,
+  hoursUsed,
+}) => {
+  const statuses = Object.values(employmentStatusConfig);
+
+  const canSelectStatus = (status) => {
+    if (!status.requiresActivity) return true;
+    return completedActivities.includes(status.requiresActivity);
+  };
+
+  const canAffordStatus = (status) => {
+    const cost = status.salaryPerFounder * founders;
+    return cash >= cost || status.salaryPerFounder === 0;
+  };
+
+  const maxHours = getAvailableHours(currentStatus, founders);
+  const isOverHours = hoursUsed > maxHours;
+  const percentage = Math.min(100, (hoursUsed / maxHours) * 100);
+
+  return (
+    <SectionCard
+      title="University Employment Status"
+      description="Your employment status affects available time, costs, and opportunities."
+      icon={<Briefcase size={20} />}
+    >
+      {/* Hours Meter */}
+      <div style={{
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        borderRadius: '10px',
+        padding: '1rem',
+        marginBottom: '1rem',
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '0.5rem',
+          fontSize: '0.875rem',
+          color: '#94a3b8',
+        }}>
+          <span>⏱️ Hours Used This Round</span>
+          <span style={{ color: isOverHours ? '#ef4444' : '#e2e8f0', fontWeight: isOverHours ? 700 : 400 }}>
+            {hoursUsed} / {maxHours} hours
+          </span>
+        </div>
+        <div style={{
+          height: '10px',
+          background: 'rgba(99, 102, 241, 0.2)',
+          borderRadius: '5px',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${Math.min(100, percentage)}%`,
+            background: isOverHours ? 'linear-gradient(90deg, #ef4444, #dc2626)' :
+                       percentage > 80 ? 'linear-gradient(90deg, #f59e0b, #eab308)' :
+                       'linear-gradient(90deg, #6366f1, #8b5cf6)',
+            borderRadius: '5px',
+            transition: 'width 0.3s ease',
+          }} />
+        </div>
+        {isOverHours && (
+          <p style={{
+            margin: '0.75rem 0 0 0',
+            padding: '0.75rem',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '8px',
+            color: '#f87171',
+            fontSize: '0.8125rem',
+          }}>
+            ⚠️ You're exceeding available hours! Consider changing employment status or removing activities.
+          </p>
+        )}
+      </div>
+
+      {/* Status Options */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '1rem',
+      }}>
+        {statuses.map(status => {
+          const isSelected = currentStatus === status.id;
+          const canSelect = canSelectStatus(status) && canAffordStatus(status);
+          const salaryTotal = status.salaryPerFounder * founders;
+
+          return (
+            <button
+              key={status.id}
+              type="button"
+              onClick={() => canSelect && onStatusChange(status.id)}
+              disabled={!canSelect}
+              style={{
+                padding: '1rem',
+                borderRadius: '12px',
+                border: isSelected ? '2px solid #7c3aed' : '2px solid rgba(99, 102, 241, 0.2)',
+                background: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                cursor: canSelect ? 'pointer' : 'not-allowed',
+                opacity: canSelect ? 1 : 0.5,
+                textAlign: 'left',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <span style={{ fontSize: '1.75rem' }}>{status.icon}</span>
+                <span style={{ fontWeight: 600, color: '#e2e8f0', flex: 1 }}>{status.name}</span>
+                {isSelected && (
+                  <span style={{
+                    background: '#22c55e',
+                    color: 'white',
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}>✓</span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem', borderTop: '1px solid rgba(99, 102, 241, 0.1)', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', padding: '0.5rem 0' }}>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f1f5f9' }}>{status.hoursPerFounder * founders}</div>
+                  <div style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>hrs/round</div>
+                </div>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f1f5f9' }}>
+                    {salaryTotal > 0 ? `€${salaryTotal.toLocaleString()}` : 'Free'}
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>salary</div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '0.5rem' }}>
+                {status.features.map((f, i) => (
+                  <div key={i} style={{ fontSize: '0.75rem', color: '#4ade80', marginBottom: '0.25rem' }}>✅ {f}</div>
+                ))}
+              </div>
+
+              <div>
+                {status.drawbacks.map((d, i) => (
+                  <div key={i} style={{ fontSize: '0.75rem', color: '#fbbf24', marginBottom: '0.25rem' }}>⚠️ {d}</div>
+                ))}
+              </div>
+
+              {status.requiresActivity && !completedActivities.includes(status.requiresActivity) && (
+                <div style={{
+                  marginTop: '0.75rem',
+                  padding: '0.5rem',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  borderRadius: '8px',
+                  fontSize: '0.75rem',
+                  color: '#f87171',
+                  textAlign: 'center',
+                }}>
+                  🔒 Complete "University Exit Discussion" first
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Late university warning */}
+      {currentStatus === 'university' && currentRound >= 3 && (
+        <div style={{
+          marginTop: '1rem',
+          padding: '1rem',
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(239, 68, 68, 0.1) 100%)',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          borderRadius: '10px',
+          color: '#fbbf24',
+          fontSize: '0.875rem',
+        }}>
+          ⚠️ <strong>Investor Concern:</strong> You're still at the university in Round {currentRound}.
+          Some investors may question your commitment. Consider transitioning to full-time. (Investor Appeal -1)
+        </div>
+      )}
+    </SectionCard>
+  );
+};
+
+// ============================================
 // MAIN TEAM GAME FORM COMPONENT
 // ============================================
 const TeamGameForm = ({ config, initialData, onReset }) => {
@@ -1129,6 +1421,7 @@ const startingCapital = config.gameInfo.startingCapital;
   const [hiredProfiles, setHiredProfiles] = useState(initialData?.hiredProfiles || []);
   const [showDiversityEvent, setShowDiversityEvent] = useState(false);
   const [diversityEventSeen, setDiversityEventSeen] = useState(initialData?.diversityEventSeen || false);
+  const [employmentStatus, setEmploymentStatus] = useState(initialData?.employmentStatus || initialData?.teamData?.employmentStatus || 'university');
 
   const [startupIdea, setStartupIdea] = useState(initialData?.startupIdea || {
     technique: "",
@@ -1195,6 +1488,7 @@ const startingCapital = config.gameInfo.startingCapital;
       teamProfiles,
       licenceAgreement,
       hiredProfiles,
+      employmentStatus,
     },
     config
   );
@@ -1217,6 +1511,7 @@ useEffect(() => {
         startupIdea,
         teamData,
         shownEvents: Array.from(shownEvents),
+        employmentStatus,
       });
     }
 }, [
@@ -1233,7 +1528,8 @@ useEffect(() => {
   diversityEventSeen,
   startupIdea,
   teamData,
-  shownEvents      // <-- REQUIRED
+  shownEvents,
+  employmentStatus,
 ]);
 // Check for round-start events
 useEffect(() => {
@@ -1371,6 +1667,7 @@ const gameId = getGameId();
   ...teamData,
   teamName,
   founders,
+  employmentStatus,
   office,
   activities,
   round: currentRound,
@@ -2002,6 +2299,19 @@ const gameId = getGameId();
           tone="default"
         />
       </div>
+
+      {/* Employment Status (Research mode only) */}
+      {isResearchMode && (
+        <EmploymentStatusSelector
+          currentStatus={employmentStatus}
+          onStatusChange={setEmploymentStatus}
+          completedActivities={teamData.completedActivities || []}
+          currentRound={currentRound}
+          founders={founders}
+          cash={progress.cash}
+          hoursUsed={progress.totalTimeSpent}
+        />
+      )}
 
       {/* Office selection */}
       <SectionCard

@@ -12,7 +12,63 @@ export const RESEARCH_CONFIG = {
     startingTRL: 3,
     startingEquity: 100,
   },
+// ============================================
+// EMPLOYMENT STATUS OPTIONS
+// The core university dilemma mechanic
+// ============================================
+employmentStatus: {
+  university: {
+    id: 'university',
+    name: 'University Employee',
+    icon: '🏛️',
+    hoursPerRound: 500,
+    founderSalaryCost: 0,
+    description: 'Still employed at university with teaching/research obligations',
+    benefits: ['Lab access', 'Grant eligible (NWO)', 'Job security', 'University resources'],
+    drawbacks: ['Limited time (500 hrs)', 'TTO oversight', 'Teaching obligations'],
+    labAccess: true,
+    grantEligible: true,
+    investorModifier: 0, // Neutral in rounds 1-2
+    investorModifierLate: -1, // Negative after round 2
+  },
+  parttime: {
+    id: 'parttime',
+    name: 'Part-time (Negotiated)',
+    icon: '⚖️',
+    hoursPerRound: 750,
+    founderSalaryCost: 6000,
+    description: 'Reduced university role, negotiated arrangement',
+    benefits: ['Lab access', 'Grant eligible', 'More time (750 hrs)'],
+    drawbacks: ['€6,000/founder salary cost', 'Complex arrangement'],
+    labAccess: true,
+    grantEligible: true,
+    investorModifier: 0,
+    requiresActivity: 'universityExit',
+  },
+  fulltime: {
+    id: 'fulltime',
+    name: 'Full-time Founder',
+    icon: '🚀',
+    hoursPerRound: 1000,
+    founderSalaryCost: 12000,
+    description: 'Left university, full focus on startup',
+    benefits: ['Full time (1000 hrs)', 'Independence', 'Investor confidence'],
+    drawbacks: ['€12,000/founder salary', 'No lab access', 'No academic grants', 'No safety net'],
+    labAccess: false,
+    grantEligible: false,
+    investorModifier: 1, // Positive - shows commitment
+    requiresActivity: 'universityExit',
+  },
+},
 
+// Activities that require lab access get discounts
+labAccessDiscounts: {
+  prototypeDevelopment: { withLab: 2500, withoutLab: 5000 },
+  patentSearch: { withLab: 1000, withoutLab: 2000 },
+},
+
+// Grants that require university affiliation
+academicOnlyGrants: ['grantTakeoff'], // NWO Take-off requires university
   // ============================================
   // EXPERT ROLES & CONTRACT REQUIREMENTS
   // Each expert requires physical documentation
@@ -320,7 +376,107 @@ export const RESEARCH_CONFIG = {
       ],
     },
   },
+// University-specific events
+teachingConflict: {
+  trigger: 'roundStart',
+  round: 2,
+  condition: 'employmentStatus === "university"',
+  title: '📚 Teaching Load Conflict',
+  message: 'Your department head reminds you of your teaching obligations. This semester requires significant time for courses and student supervision.',
+  severity: 'warning',
+  choices: [
+    {
+      id: 'accept',
+      label: 'Accept teaching duties',
+      effect: 'hours: -100',
+      description: 'Lose 100 hours this round',
+    },
+    {
+      id: 'negotiate',
+      label: 'Negotiate reduction',
+      effect: 'cash: -2000',
+      description: 'Pay €2,000 for course buyout',
+    },
+    {
+      id: 'refuse',
+      label: 'Refuse (risky)',
+      effect: 'event: forceExit',
+      description: 'May be forced to leave university',
+    },
+  ],
+},
 
+careerCrossroads: {
+  trigger: 'roundStart',
+  round: 3,
+  condition: 'employmentStatus === "university"',
+  title: '🎓 Career Crossroads',
+  message: 'Your tenure review is approaching. The committee has noticed your "entrepreneurial distractions." You need to make a choice about your career path.',
+  severity: 'danger',
+  choices: [
+    {
+      id: 'focusTenure',
+      label: 'Focus on tenure',
+      effect: 'hours: -200',
+      description: 'Prioritize academic career (-200 hrs/round)',
+    },
+    {
+      id: 'leaveForStartup',
+      label: 'Leave for startup',
+      effect: 'status: fulltime',
+      description: 'Commit fully to entrepreneurship',
+    },
+    {
+      id: 'tryBoth',
+      label: 'Try to do both',
+      effect: 'risk: tenure',
+      description: '30% chance of failing tenure AND reduced time',
+    },
+  ],
+},
+
+investorCommitmentQuestion: {
+  trigger: 'activity',
+  activity: 'investorMeeting',
+  condition: 'currentRound >= 3 && employmentStatus === "university"',
+  title: '💰 Investor Questions Your Commitment',
+  message: '"You\'re still at the university? Most founders we back are full-time by now. How committed are you really to this venture?"',
+  severity: 'warning',
+  consequences: [
+    'Investor Appeal -1 while at university',
+    'Some investors may pass',
+    'Consider your timing',
+  ],
+},
+
+noSafetyNet: {
+  trigger: 'statusChange',
+  newStatus: 'fulltime',
+  title: '💼 The Leap of Faith',
+  message: 'You\'ve left your stable university position. There\'s no safety net now. Your personal runway depends on the startup\'s success.',
+  severity: 'info',
+  tips: [
+    'Budget for founder salaries (€12,000/founder/round)',
+    'You can no longer apply for NWO Take-off grants',
+    'But investors will see your commitment (+1 Appeal)',
+  ],
+},
+
+lowRunwayWarning: {
+  trigger: 'metric',
+  metric: 'cash',
+  threshold: 15000,
+  comparison: 'below',
+  condition: 'employmentStatus === "fulltime"',
+  title: '⚠️ Running Low on Runway',
+  message: 'Your cash is running low and you need €12,000/founder each round to live. Consider your options carefully.',
+  severity: 'danger',
+  tips: [
+    'Accelerate fundraising efforts',
+    'Consider a bridge loan from the bank',
+    'Could reduce founder salaries temporarily',
+  ],
+},
   // ============================================
   // TEAM PROFILE OPTIONS
   // ============================================

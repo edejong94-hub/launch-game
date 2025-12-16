@@ -1,0 +1,256 @@
+.hour-tracker {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.hour-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(148, 163, 184, 0.15);
+}
+
+.hour-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #f1f5f9;
+  font-weight: 700;
+}
+
+.hour-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hour-count {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  padding: 0.375rem 0.75rem;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.hour-count.warning {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.hour-count.over {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.hour-progress-bar {
+  position: relative;
+  height: 32px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.hour-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+  border-radius: 16px;
+  transition: width 0.4s ease, background 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.hour-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.hour-progress-fill.warning {
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.hour-progress-fill.overflow {
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+}
+
+.hour-overflow-indicator {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(239, 68, 68, 0.3),
+    rgba(239, 68, 68, 0.3) 10px,
+    rgba(239, 68, 68, 0.5) 10px,
+    rgba(239, 68, 68, 0.5) 20px
+  );
+  border-left: 2px solid #ef4444;
+  animation: overflow-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes overflow-pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.hour-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.hour-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.875rem;
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.hour-stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 0.375rem;
+}
+
+.hour-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 0.25rem;
+}
+
+.hour-stat-value.positive {
+  color: #34d399;
+}
+
+.hour-stat-value.negative {
+  color: #f87171;
+}
+
+.hour-stat-detail {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}
+
+.hour-warning-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.warning-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
+}
+
+.warning-text {
+  flex: 1;
+  color: #fecaca;
+}
+
+.warning-text strong {
+  color: #fee2e2;
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.hour-caution-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.caution-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.caution-text {
+  flex: 1;
+  color: #fef3c7;
+  font-size: 0.875rem;
+}
+
+.caution-text strong {
+  color: #fde68a;
+}
+
+.hour-info {
+  background: rgba(15, 23, 42, 0.4);
+  padding: 0.875rem;
+  border-radius: 8px;
+}
+
+.hour-info-text {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+}
+
+.hour-info-text strong {
+  color: #f1f5f9;
+}
+
+.hour-info-detail {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .hour-stats {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .hour-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}

@@ -61,6 +61,69 @@ employmentStatus: {
   },
 },
 
+// ============================================
+// STICKER SYSTEM - Expert Meeting Capacity
+// Physical stickers represent slots for expert meetings
+// ============================================
+stickerSystem: {
+  university: {
+    allowance: 3,
+    label: "3 expert meeting slots",
+    reasoning: "Limited availability due to teaching/research commitments"
+  },
+  parttime: {
+    allowance: 4,
+    label: "4 expert meeting slots",
+    reasoning: "More flexible schedule, but still part-time at university"
+  },
+  fulltime: {
+    allowance: 5,
+    label: "5 expert meeting slots",
+    reasoning: "Full availability for external meetings and negotiations"
+  },
+  costLevels: {
+    heavy: {
+      cost: 2,
+      label: "2 stickers",
+      description: "Intensive expert activities requiring significant external engagement",
+      color: "#dc2626"
+    },
+    standard: {
+      cost: 1,
+      label: "1 sticker",
+      description: "Standard expert meetings and consultations",
+      color: "#f59e0b"
+    },
+    internal: {
+      cost: 0,
+      label: "0 stickers",
+      description: "Internal work that doesn't require external expert meetings",
+      color: "#10b981"
+    }
+  }
+},
+
+// ============================================
+// INTERRUPT CARDS - University Employees Only
+// Physical cards that can reduce activity time
+// ============================================
+interruptCards: {
+  university: {
+    cardsPerRound: 2,
+    effect: "Reduce any activity by 20 hours",
+    description: "Use academic connections to speed up processes",
+    reminder: "University employees: You get 2 interrupt cards this round!"
+  },
+  parttime: {
+    cardsPerRound: 0,
+    description: "No interrupt cards - reduced university access"
+  },
+  fulltime: {
+    cardsPerRound: 0,
+    description: "No interrupt cards - no university affiliation"
+  }
+},
+
 // Activities that require lab access get discounts
 labAccessDiscounts: {
   prototypeDevelopment: { withLab: 2500, withoutLab: 5000 },
@@ -816,6 +879,7 @@ lowRunwayWarning: {
       name: "Customer Discovery Interviews",
       costTime: 40,
       costMoney: 0,
+      stickerCost: 1,
       category: "discovery",
       description: "Talk to potential customers. Essential for validation.",
       requiresContract: "interviewLog",
@@ -825,6 +889,7 @@ lowRunwayWarning: {
       name: "Customer Validation (LOI/Pilot)",
       costTime: 60,
       costMoney: 0,
+      stickerCost: 1,
       category: "discovery",
       description: "Get letter of intent or pilot agreement.",
       requiresInterviews: 2,
@@ -836,6 +901,7 @@ lowRunwayWarning: {
       name: "Industry Partner Exploration",
       costTime: 40,
       costMoney: 1000,
+      stickerCost: 1,
       category: "discovery",
       description: "Identify potential industry partners or licensees.",
       requiresContract: "ndaAgreement",
@@ -847,6 +913,7 @@ lowRunwayWarning: {
       name: "TTO: Initial Discussion",
       costTime: 60,
       costMoney: 0,
+      stickerCost: 1,
       category: "tto",
       description: "Required first step. Discuss IP ownership with Tech Transfer Office.",
       unlocks: ["ttoNegotiation", "licenceNegotiation", "patentSearch", "patentFiling", "patentDIY", "legalForm"],
@@ -858,6 +925,7 @@ lowRunwayWarning: {
       name: "TTO: Terms Negotiation",
       costTime: 60,
       costMoney: 0,
+      stickerCost: 1,
       category: "tto",
       description: "Negotiate specific terms with the TTO.",
       requiresActivity: "ttoDiscussion",
@@ -867,6 +935,7 @@ lowRunwayWarning: {
       name: "Licence Agreement",
       costTime: 80,
       costMoney: 2000,
+      stickerCost: 2,
       category: "tto",
       description: "Finalize the licence agreement with the university.",
       requiresActivity: "ttoDiscussion",
@@ -878,6 +947,7 @@ lowRunwayWarning: {
       name: "Lab Access Negotiation",
       costTime: 40,
       costMoney: 0,
+      stickerCost: 1,
       category: "tto",
       description: "Negotiate continued use of university facilities after spinning off.",
       expert: "tto",
@@ -886,6 +956,7 @@ lowRunwayWarning: {
       name: "University Exit Discussion",
       costTime: 60,
       costMoney: 0,
+      stickerCost: 1,
       category: "tto",
       description: "Negotiate leaving terms, transition plan, ongoing relationships.",
       expert: "tto",
@@ -896,6 +967,7 @@ lowRunwayWarning: {
       name: "Patent: Freedom to Operate",
       costTime: 40,
       costMoney: 2000,
+      stickerCost: 1,
       category: "ip",
       description: "Check if your technology infringes existing patents.",
       requiresActivity: "ttoDiscussion",
@@ -906,6 +978,7 @@ lowRunwayWarning: {
       name: "Patent: Professional Filing",
       costTime: 100,
       costMoney: 15000,
+      stickerCost: 2,
       category: "ip",
       description: "Hire attorney for proper IP protection. Stronger claims.",
       investorAppealBonus: 2,
@@ -918,6 +991,7 @@ lowRunwayWarning: {
       name: "Patent: DIY Filing",
       costTime: 150,
       costMoney: 2000,
+      stickerCost: 2,
       category: "ip",
       description: "Cheaper but risky. May have weak claims that don't hold up.",
       investorAppealBonus: 1,
@@ -930,6 +1004,7 @@ lowRunwayWarning: {
       name: "NWO Take-off Application",
       costTime: 80,
       costMoney: 0,
+      stickerCost: 2,
       category: "funding",
       description: "€40-250k, no equity loss. Very competitive, 3-6 month process.",
       requiresContract: "grantApplication",
@@ -940,6 +1015,7 @@ lowRunwayWarning: {
       name: "WBSO Registration",
       costTime: 40,
       costMoney: 0,
+      stickerCost: 1,
       category: "funding",
       description: "Tax credit on R&D costs. ~€20k/year benefit. Relatively easy.",
       requiresContract: "grantApplication",
@@ -949,6 +1025,7 @@ lowRunwayWarning: {
       name: "Regional Fund (ROM/MIT)",
       costTime: 60,
       costMoney: 0,
+      stickerCost: 1,
       category: "funding",
       description: "€50-150k, may take small equity stake (0-8%).",
       requiresContract: "grantApplication",
@@ -958,6 +1035,7 @@ lowRunwayWarning: {
       name: "Investor Meeting",
       costTime: 40,
       costMoney: 0,
+      stickerCost: 1,
       category: "funding",
       description: "Pitch to VCs or angels. Build relationships.",
       unlocks: ["investorNegotiation"],
@@ -969,6 +1047,7 @@ lowRunwayWarning: {
       name: "Term Sheet Negotiation",
       costTime: 60,
       costMoney: 5000,
+      stickerCost: 2,
       category: "funding",
       description: "Negotiate investment terms. Lawyer costs included.",
       requiresActivity: "investorMeeting",
@@ -981,6 +1060,7 @@ lowRunwayWarning: {
       name: "Bank: Initial Meeting",
       costTime: 40,
       costMoney: 0,
+      stickerCost: 1,
       category: "banking",
       description: "Discuss financing options with the bank. They want to see your business plan.",
       unlocks: ["loanApplication"],
@@ -992,6 +1072,7 @@ lowRunwayWarning: {
       name: "Loan Application",
       costTime: 60,
       costMoney: 500,
+      stickerCost: 1,
       category: "banking",
       description: "Apply for bank financing. Application fee included.",
       requiresActivity: "bankMeeting",
@@ -1005,6 +1086,7 @@ lowRunwayWarning: {
       name: "Co-founder Agreement",
       costTime: 40,
       costMoney: 2000,
+      stickerCost: 0,
       category: "team",
       description: "Equity split, vesting, roles. Essential before investment.",
     },
@@ -1012,6 +1094,7 @@ lowRunwayWarning: {
       name: "Hire: Business/Sales Expert",
       costTime: 60,
       costMoney: 0,
+      stickerCost: 0,
       category: "team",
       description: "Add business skills to your team. Helps with customers and fundraising.",
       addsProfile: "business",
@@ -1021,6 +1104,7 @@ lowRunwayWarning: {
       name: "Hire: Market Expert",
       costTime: 60,
       costMoney: 0,
+      stickerCost: 0,
       category: "team",
       description: "Add market knowledge. Helps with customer development.",
       addsProfile: "market",
@@ -1030,6 +1114,7 @@ lowRunwayWarning: {
       name: "Hire: Operations/Finance",
       costTime: 60,
       costMoney: 0,
+      stickerCost: 0,
       category: "team",
       description: "Add operational expertise. Helps with scaling.",
       addsProfile: "operations",
@@ -1039,6 +1124,7 @@ lowRunwayWarning: {
       name: "Conference / Demo Day",
       costTime: 60,
       costMoney: 1000,
+      stickerCost: 0,
       category: "team",
       description: "Build network, visibility, find partners and advisors.",
       networkBonus: 1,
@@ -1049,6 +1135,7 @@ lowRunwayWarning: {
       name: "Prototype Development",
       costTime: 120,
       costMoney: 5000,
+      stickerCost: 0,
       category: "development",
       description: "Build working prototype. Increases TRL by 1.",
       trlBonus: 1,
@@ -1057,6 +1144,7 @@ lowRunwayWarning: {
       name: "Pilot Project",
       costTime: 100,
       costMoney: 10000,
+      stickerCost: 2,
       category: "development",
       description: "Real-world test with customer. Big TRL jump (+2).",
       trlBonus: 2,
@@ -1069,6 +1157,7 @@ lowRunwayWarning: {
       name: "Incubator Application",
       costTime: 40,
       costMoney: 0,
+      stickerCost: 1,
       category: "development",
       description: "Apply for startup program. Unlocks incubator office space.",
       unlocks: ["incubatorOffice"],

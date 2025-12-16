@@ -1,5 +1,6 @@
 import GameEventPopup, { checkEventTrigger } from './Components/Gameeventpopup';
 import EndGameScoreBreakdown from './Components/EndGameScoreBreakdown';
+import ResourceTracker from './Components/ResourceTracker';
 import React, { useState, useEffect, useCallback } from "react";
 import {
   CheckCircle,
@@ -1177,6 +1178,34 @@ const GroupedActivities = ({
                       <div className="activity-cost">
                         <span>{activity.costTime} h</span>
                         <span style={{ color: '#22c55e', fontWeight: '700' }}>€{activity.costMoney.toLocaleString()}</span>
+                        {activity.stickerCost !== undefined && (
+                          <span
+                            className={`sticker-badge ${
+                              activity.stickerCost === 2 ? 'heavy-activity' :
+                              activity.stickerCost === 1 ? 'standard-activity' :
+                              'internal-activity'
+                            }`}
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              backgroundColor: activity.stickerCost === 2 ? 'rgba(220, 38, 38, 0.15)' :
+                                             activity.stickerCost === 1 ? 'rgba(245, 158, 11, 0.15)' :
+                                             'rgba(16, 185, 129, 0.15)',
+                              color: activity.stickerCost === 2 ? '#fca5a5' :
+                                    activity.stickerCost === 1 ? '#fbbf24' :
+                                    '#6ee7b7',
+                              border: `1px solid ${
+                                activity.stickerCost === 2 ? 'rgba(220, 38, 38, 0.3)' :
+                                activity.stickerCost === 1 ? 'rgba(245, 158, 11, 0.3)' :
+                                'rgba(16, 185, 129, 0.3)'
+                              }`
+                            }}
+                          >
+                            {activity.stickerCost === 0 ? '—' : '•'.repeat(activity.stickerCost)} sticker{activity.stickerCost !== 1 ? 's' : ''}
+                          </span>
+                        )}
                       </div>
                       {activity.description && (
                         <p
@@ -1382,7 +1411,13 @@ const EmploymentStatusSelector = ({
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem', borderTop: '1px solid rgba(99, 102, 241, 0.1)', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', padding: '0.5rem 0' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', borderTop: '1px solid rgba(99, 102, 241, 0.1)', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', padding: '0.5rem 0' }}>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fbbf24' }}>
+                    {'•'.repeat(RESEARCH_CONFIG.stickerSystem[status.id]?.allowance || 0)}
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>stickers</div>
+                </div>
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f1f5f9' }}>{status.hoursPerFounder * founders}</div>
                   <div style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>hrs/round</div>
@@ -2465,6 +2500,15 @@ const gameId = getGameId();
           tone="default"
         />
       </div>
+
+      {/* Resource Tracker (Research mode only) */}
+      {isResearchMode && (
+        <ResourceTracker
+          employmentStatus={employmentStatus}
+          founderCount={founders}
+          hoursUsed={progress.totalTimeSpent}
+        />
+      )}
 
       {/* Employment Status (Research mode only) */}
       {isResearchMode && (

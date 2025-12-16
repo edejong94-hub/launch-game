@@ -1178,32 +1178,27 @@ const GroupedActivities = ({
                       <div className="activity-cost">
                         <span>{activity.costTime} h</span>
                         <span style={{ color: '#22c55e', fontWeight: '700' }}>€{activity.costMoney.toLocaleString()}</span>
-                        {activity.stickerCost !== undefined && (
+                        {activity.stickerCost !== undefined && activity.stickerCost > 0 && (
                           <span
                             className={`sticker-badge ${
-                              activity.stickerCost === 2 ? 'heavy-activity' :
-                              activity.stickerCost === 1 ? 'standard-activity' :
-                              'internal-activity'
+                              activity.stickerCost === 2 ? 'heavy-activity' : 'standard-activity'
                             }`}
                             style={{
                               padding: '2px 8px',
                               borderRadius: '12px',
                               fontSize: '11px',
                               fontWeight: '600',
-                              backgroundColor: activity.stickerCost === 2 ? 'rgba(220, 38, 38, 0.15)' :
-                                             activity.stickerCost === 1 ? 'rgba(245, 158, 11, 0.15)' :
-                                             'rgba(16, 185, 129, 0.15)',
-                              color: activity.stickerCost === 2 ? '#fca5a5' :
-                                    activity.stickerCost === 1 ? '#fbbf24' :
-                                    '#6ee7b7',
-                              border: `1px solid ${
-                                activity.stickerCost === 2 ? 'rgba(220, 38, 38, 0.3)' :
-                                activity.stickerCost === 1 ? 'rgba(245, 158, 11, 0.3)' :
-                                'rgba(16, 185, 129, 0.3)'
-                              }`
+                              backgroundColor: activity.stickerCost === 2 ? 'rgba(220, 38, 38, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                              color: activity.stickerCost === 2 ? '#fca5a5' : '#fbbf24',
+                              border: `1px solid ${activity.stickerCost === 2 ? 'rgba(220, 38, 38, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
                             }}
                           >
-                            {activity.stickerCost === 0 ? '—' : '•'.repeat(activity.stickerCost)} sticker{activity.stickerCost !== 1 ? 's' : ''}
+                            {'•'.repeat(activity.stickerCost)} sticker{activity.stickerCost !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {activity.stickerCost === 0 && (
+                          <span className="hours-only-badge">
+                            ⏱️ hours only
                           </span>
                         )}
                       </div>

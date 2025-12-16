@@ -10,56 +10,97 @@ const StickerAllowance = ({ employmentStatus }) => {
 
   const stickerCount = stickerConfig.allowance;
   const stickers = Array(stickerCount).fill('•');
+  const isUniversity = employmentStatus === 'university';
 
   return (
     <div className="sticker-allowance">
       <div className="sticker-header">
-        <h3>Expert Meeting Capacity</h3>
-        <div className="sticker-dots">
-          {stickers.map((dot, index) => (
-            <span key={index} className="sticker-dot">{dot}</span>
+        <div className="sticker-title">
+          <span className="sticker-icon">🎫</span>
+          <span>Expert Meeting Capacity</span>
+        </div>
+        <div className="sticker-count-badge">
+          {stickers.map((s, i) => (
+            <span key={i} className="sticker-mini">{s}</span>
           ))}
         </div>
       </div>
 
-      <div className="sticker-info">
-        <p className="sticker-reasoning">{stickerConfig.reasoning}</p>
+      <p className="sticker-subtitle">{stickerConfig.reasoning}</p>
+
+      <div className="sticker-display">
+        <div className="sticker-visual">
+          <div className="sticker-dots-large">
+            {stickers.map((s, i) => (
+              <div key={i} className="sticker-dot-large">
+                <span>{s}</span>
+              </div>
+            ))}
+          </div>
+          <div className="sticker-label">
+            <span className="count-number">{stickerCount}</span>
+            <span className="count-text">sticker{stickerCount > 1 ? 's' : ''}</span>
+          </div>
+        </div>
       </div>
 
-      {interruptConfig && interruptConfig.cardsPerRound > 0 && (
+      {/* How it works */}
+      <div className="sticker-instructions">
+        <div className="instructions-title">How Stickers Work:</div>
+        <div className="instruction-item">
+          <span className="instruction-number">1</span>
+          <span><strong>Collect</strong> your {stickerCount} stickers at the Sticker Station</span>
+        </div>
+        <div className="instruction-item">
+          <span className="instruction-number">2</span>
+          <span><strong>Sign up</strong> by placing stickers on the Expert Poster on the wall</span>
+        </div>
+        <div className="instruction-item">
+          <span className="instruction-number">3</span>
+          <span><strong>Visit</strong> the expert when your slot comes up</span>
+        </div>
+        <div className="instruction-item">
+          <span className="instruction-number">🏃</span>
+          <span><strong>First come, first served</strong> - slots fill up fast!</span>
+        </div>
+      </div>
+
+      {/* Interrupt reminder for university employees */}
+      {isUniversity && interruptConfig && interruptConfig.cardsPerRound > 0 && (
         <div className="interrupt-reminder">
-          <div className="interrupt-icon">⚡</div>
-          <div className="interrupt-text">
-            <strong>{interruptConfig.reminder}</strong>
-            <p className="interrupt-effect">{interruptConfig.effect}</p>
+          <div className="interrupt-reminder-header">
+            <span className="interrupt-icon">⚡</span>
+            <span>University Obligation</span>
           </div>
+          <p className="interrupt-reminder-text">
+            Draw an <strong>Interrupt Card</strong> at the sticker station.
+            Teaching duties may cost you a sticker!
+          </p>
         </div>
       )}
 
-      <div className="sticker-instructions">
-        <h4>How Stickers Work</h4>
-        <ol>
-          <li><strong>Physical stickers:</strong> You receive {stickerCount} physical sticker{stickerCount !== 1 ? 's' : ''} at the start of each round</li>
-          <li><strong>Activities require stickers:</strong> Place stickers on activity cards that require expert meetings</li>
-          <li><strong>Track your capacity:</strong> Stickers represent your bandwidth for external expert engagement</li>
-        </ol>
-      </div>
-
+      {/* Legend - only 2 categories */}
       <div className="sticker-legend">
-        <h4>Activity Costs</h4>
+        <div className="legend-title">Activity Costs:</div>
         <div className="legend-items">
-          <div className="legend-item heavy">
-            <span className="legend-badge">••</span>
-            <span className="legend-label">Intensive activities (patents, pilots, negotiations)</span>
+          <div className="legend-item intensive">
+            <span className="legend-dots">••</span>
+            <div className="legend-text">
+              <strong>Intensive activities</strong>
+              <span>Patents, pilots, negotiations</span>
+            </div>
           </div>
           <div className="legend-item standard">
-            <span className="legend-badge">•</span>
-            <span className="legend-label">Standard meetings (TTO, investors, grants)</span>
+            <span className="legend-dots">•</span>
+            <div className="legend-text">
+              <strong>Standard meetings</strong>
+              <span>TTO, investors, grants, customers</span>
+            </div>
           </div>
-          <div className="legend-item internal">
-            <span className="legend-badge">—</span>
-            <span className="legend-label">Internal work (prototyping, hiring, agreements)</span>
-          </div>
+        </div>
+        <div className="legend-note">
+          <span className="note-icon">💡</span>
+          <span>Internal work (prototyping, hiring) = no sticker needed, hours only</span>
         </div>
       </div>
     </div>

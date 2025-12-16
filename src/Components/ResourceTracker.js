@@ -27,14 +27,38 @@ const ResourceTracker = ({ employmentStatus, founderCount, hoursUsed }) => {
       </div>
 
       <div className="resource-tracker-summary">
-        <div className="summary-icon">📊</div>
-        <div className="summary-content">
-          <h4>How to use this information</h4>
-          <ul>
-            <li><strong>Stickers</strong> are physical tokens you place on activities that require expert meetings</li>
-            <li><strong>Hours</strong> represent your team's total work capacity - track this digitally in the app</li>
-            <li>Both constraints are real - plan carefully to maximize your progress each round</li>
-          </ul>
+        <div className="summary-card">
+          <div className="summary-header">
+            <span className="summary-icon">🎫</span>
+            <strong>Stickers</strong>
+          </div>
+          <p className="summary-description">
+            Limit your <strong>expert meetings</strong>.
+            Place on signup poster to claim slots.
+          </p>
+          <div className="summary-detail">
+            Intensive activities = 2 stickers<br/>
+            Standard meetings = 1 sticker
+          </div>
+        </div>
+
+        <div className="summary-divider">
+          <span>+</span>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-header">
+            <span className="summary-icon">⏱️</span>
+            <strong>Hours</strong>
+          </div>
+          <p className="summary-description">
+            Limit your <strong>total work</strong>.
+            All activities cost hours.
+          </p>
+          <div className="summary-detail">
+            Internal work only needs hours<br/>
+            (prototyping, hiring, agreements)
+          </div>
         </div>
       </div>
     </div>

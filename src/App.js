@@ -32,6 +32,33 @@ const getGameConfig = () => {
 const GAME_CONFIG = getGameConfig();
 const isResearchMode = GAME_CONFIG.gameMode === "research";
 
+/**
+ * Recursively removes undefined values from an object.
+ * Firebase Firestore doesn't accept undefined values.
+ * Converts undefined to null or removes the field entirely.
+ */
+const sanitizeForFirestore = (obj) => {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirestore(item)).filter(item => item !== undefined);
+  }
+
+  if (typeof obj === 'object' && obj !== null) {
+    const sanitized = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        sanitized[key] = sanitizeForFirestore(value);
+      }
+    }
+    return sanitized;
+  }
+
+  return obj;
+};
+
 // Get gameId from URL
 const getGameId = () => {
   const params = new URLSearchParams(window.location.search);
@@ -1872,18 +1899,19 @@ const gameId = getGameId();
   completedActivities: newCompletedActivities,
   trl: adjustedTRL,
   pivotHistory: [...(teamData.pivotHistory || []), ...pivotHistory],
-  lastPivotRound: activities.pivot ? currentRound : teamData.lastPivotRound,
+  lastPivotRound: activities.pivot ? currentRound : (teamData.lastPivotRound ?? null),
 
-  // Achievement tracking fields
-  wentNegative: (teamData.wentNegative || false) || progress.cash < 0,
-  leftUniversityRound: teamData.leftUniversityRound ||
+  // Achievement tracking fields (use ?? to ensure no undefined values)
+  wentNegative: (teamData.wentNegative ?? false) || progress.cash < 0,
+  leftUniversityRound: teamData.leftUniversityRound ??
     (employmentStatus !== 'university' && teamData.employmentStatus === 'university' ? currentRound : null),
-  totalStickersUsed: (teamData.totalStickersUsed || 0) + stickersUsedThisRound,
-  maxSpendInRound: Math.max(teamData.maxSpendInRound || 0, spendingThisRound),
-  pivotCount: (teamData.pivotCount || 0) + (activities.pivot ? 1 : 0),
-  totalInvestment: (teamData.totalInvestment || 0) + Number(funding.investment || 0),
-  totalRevenue: (teamData.totalRevenue || 0) + Number(funding.revenue || 0),
-  loanInterest: Math.max(teamData.loanInterest || 0, Number(funding.loanInterest || 0)),
+  totalStickersUsed: (teamData.totalStickersUsed ?? 0) + stickersUsedThisRound,
+  maxSpendInRound: Math.max(teamData.maxSpendInRound ?? 0, spendingThisRound),
+  pivotCount: (teamData.pivotCount ?? 0) + (activities.pivot ? 1 : 0),
+  totalInvestment: (teamData.totalInvestment ?? 0) + Number(funding.investment || 0),
+  totalRevenue: (teamData.totalRevenue ?? 0) + Number(funding.revenue || 0),
+  loanInterest: Math.max(teamData.loanInterest ?? 0, Number(funding.loanInterest || 0)),
+  lowestCash: Math.min(teamData.lowestCash ?? progress.cash, progress.cash),
 };
 
     if (isResearchMode) {
@@ -1933,7 +1961,7 @@ const gameId = getGameId();
 
     setDoc(
       doc(db, "games", gameId, "teams", oderId, "rounds", String(currentRound)),
-      roundData
+      sanitizeForFirestore(roundData)
     )
       .then(() => console.log("✅ Round data saved successfully"))
       .catch((err) => {
@@ -1963,7 +1991,7 @@ const gameId = getGameId();
       teamData: teamDocData
     });
 
-    setDoc(doc(db, "games", gameId, "teams", oderId), teamDocData, {
+    setDoc(doc(db, "games", gameId, "teams", oderId), sanitizeForFirestore(teamDocData), {
       merge: true,
     })
       .then(() => console.log("✅ Team data saved successfully"))

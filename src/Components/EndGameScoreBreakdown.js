@@ -380,7 +380,7 @@ const EndGameScoreBreakdown = ({ teamData, progress, config }) => {
                   Healthy cash position. Good runway for growth.
                 </li>
               )}
-              {earnedBonuses.length >= 3 && (
+              {positiveAchievements.length >= 3 && (
                 <li className="feedback-success">
                   Multiple bonuses achieved! Well-rounded execution.
                 </li>

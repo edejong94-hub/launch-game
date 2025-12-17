@@ -330,6 +330,32 @@ const EndGameScoreBreakdown = ({ teamData, progress, config }) => {
             </div>
           </div>
 
+          {/* Pivot History */}
+          {teamData.pivotHistory && teamData.pivotHistory.length > 0 && (
+            <div className="pivot-history-section">
+              <h3 className="pivot-history-title">
+                🔄 Pivot Journey ({teamData.pivotHistory.length} pivot{teamData.pivotHistory.length > 1 ? 's' : ''})
+              </h3>
+              <div className="pivot-timeline">
+                {teamData.pivotHistory.map((pivot, index) => (
+                  <div key={index} className="pivot-entry">
+                    <div className="pivot-entry-header">
+                      <span className="pivot-round">Round {pivot.round}</span>
+                      <span className="pivot-reason">{pivot.reasonLabel}</span>
+                    </div>
+                    {pivot.customNote && (
+                      <p className="pivot-note-text">"{pivot.customNote}"</p>
+                    )}
+                    <div className="pivot-impact">
+                      TRL: {pivot.previousTRL} → {Math.max(3, pivot.previousTRL - 1)} |
+                      Lost {pivot.lostValidations} validation(s)
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Feedback */}
           <div className="feedback-section" style={{ borderColor: ranking.color }}>
             <h4>💡 Key Takeaways</h4>
@@ -785,6 +811,66 @@ const styles = `
 
 .animate-in {
   animation: fadeIn 0.5s ease;
+}
+
+.pivot-history-section {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 12px;
+}
+
+.pivot-history-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fbbf24;
+  margin: 0 0 1rem 0;
+}
+
+.pivot-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pivot-entry {
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 3px solid #f59e0b;
+  border-radius: 0 8px 8px 0;
+  padding: 0.875rem;
+}
+
+.pivot-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.pivot-round {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a3a3a3;
+  text-transform: uppercase;
+}
+
+.pivot-reason {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f5f5f5;
+}
+
+.pivot-note-text {
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: #a3a3a3;
+  margin: 0 0 0.5rem 0;
+}
+
+.pivot-impact {
+  font-size: 0.75rem;
+  color: #f87171;
 }
 `;
 

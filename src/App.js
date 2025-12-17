@@ -1,6 +1,7 @@
 import GameEventPopup, { checkEventTrigger } from './Components/Gameeventpopup';
 import EndGameScoreBreakdown from './Components/EndGameScoreBreakdown';
 import ResourceTracker from './Components/ResourceTracker';
+import PivotReasonSelector from './Components/PivotReasonSelector';
 import React, { useState, useEffect, useCallback } from "react";
 import {
   CheckCircle,
@@ -381,6 +382,40 @@ const calculateProgress = (teamData, config) => {
 
 // Check if an activity is unlocked based on prerequisites
 const isActivityUnlocked = (activityKey, activity, teamData, config) => {
+  // Special handling for pivot
+  if (activityKey === 'pivot') {
+    const minInterviews = activity.requires?.minInterviews || 2;
+    const minRound = activity.requires?.minRound || 2;
+
+    const currentInterviews = (teamData.interviewCount || 0);
+    const currentRound = (teamData.round || 1);
+
+    if (currentRound < minRound) {
+      return {
+        unlocked: false,
+        reason: `Available from round ${minRound}`,
+      };
+    }
+
+    if (currentInterviews < minInterviews) {
+      return {
+        unlocked: false,
+        reason: `Requires ${minInterviews}+ customer interviews first`,
+      };
+    }
+
+    // Check if already pivoted this round - prevent multiple pivots per round
+    const lastPivotRound = teamData.lastPivotRound || teamData.pivotHistory?.[teamData.pivotHistory.length - 1]?.round;
+    if (lastPivotRound === currentRound) {
+      return {
+        unlocked: false,
+        reason: 'Already pivoted this round',
+      };
+    }
+
+    return { unlocked: true };
+  }
+
   // Check grant eligibility based on employment status
   if (isResearchMode && !isGrantEligible(teamData.employmentStatus || 'university', activityKey)) {
     return {
@@ -1067,6 +1102,7 @@ const GroupedActivities = ({
       funding: <PieChart size={18} />,
       team: <Users size={18} />,
       development: <Beaker size={18} />,
+      strategy: <Target size={18} />,
     };
     return icons[sectionId] || null;
   };
@@ -1135,6 +1171,7 @@ const GroupedActivities = ({
                 const isLocked = !unlockStatus.unlocked;
                 const isCompletedOneTime = activity.oneTimeOnly && (teamData.completedActivities?.includes(key) || false);
                 const cannotUncheck = activity.oneTimeOnly && checked;
+                const isPivot = key === 'pivot';
 
                 return (
                   <label
@@ -1143,7 +1180,8 @@ const GroupedActivities = ({
                       "activity-card" +
                       (checked && !isLocked ? " checked" : "") +
                       (isLocked ? " opacity-60" : "") +
-                      (isCompletedOneTime ? " opacity-75" : "")
+                      (isCompletedOneTime ? " opacity-75" : "") +
+                      (isPivot ? " pivot-activity" : "")
                     }
                     style={{
                       cursor: isLocked || cannotUncheck ? "not-allowed" : "pointer",
@@ -1503,6 +1541,10 @@ const startingCapital = config.gameInfo.startingCapital;
   const [diversityEventSeen, setDiversityEventSeen] = useState(initialData?.diversityEventSeen || false);
   const [employmentStatus, setEmploymentStatus] = useState(initialData?.employmentStatus || initialData?.teamData?.employmentStatus || 'university');
 
+  // Pivot state
+  const [showPivotModal, setShowPivotModal] = useState(false);
+  const [pivotHistory, setPivotHistory] = useState(initialData?.pivotHistory || []);
+
   const [startupIdea, setStartupIdea] = useState(initialData?.startupIdea || {
     technique: "",
     productIdea: "",
@@ -1673,12 +1715,27 @@ const gameId = getGameId();
 ]);
 
   const handleActivityToggle = (activityKey) => {
+    // Special handling for pivot
+    if (activityKey === 'pivot') {
+      // Show confirmation modal instead of just toggling
+      if (!activities[activityKey]) {
+        setShowPivotModal(true);
+      } else {
+        // Deselecting pivot - just toggle off
+        setActivities(prev => ({
+          ...prev,
+          [activityKey]: false,
+        }));
+      }
+      return;
+    }
+
     setActivities((prev) => {
       const newActivities = {
         ...prev,
         [activityKey]: !prev[activityKey],
       };
-      
+
       // Check for activity-triggered events when activity is enabled
       if (newActivities[activityKey]) {
         const activity = config.activities[activityKey];
@@ -1693,9 +1750,32 @@ const gameId = getGameId();
           }
         }
       }
-      
+
       return newActivities;
     });
+  };
+
+  const handlePivotConfirm = (pivotData) => {
+    // Record the pivot
+    const newPivotRecord = {
+      round: currentRound,
+      ...pivotData,
+      timestamp: new Date().toISOString(),
+    };
+
+    setPivotHistory(prev => [...prev, newPivotRecord]);
+
+    // Select the pivot activity
+    setActivities(prev => ({
+      ...prev,
+      pivot: true,
+    }));
+
+    setShowPivotModal(false);
+  };
+
+  const handlePivotCancel = () => {
+    setShowPivotModal(false);
   };
 
   const handleHireProfile = (profileId) => {
@@ -1755,6 +1835,18 @@ const gameId = getGameId();
     // Calculate total spending this round for achievement tracking
     const spendingThisRound = progress.totalMoneySpent || 0;
 
+    // Apply pivot effects if pivot was selected
+    let adjustedTRL = progress.currentTRL;
+    let adjustedValidations = progress.validationsTotal;
+
+    if (activities.pivot) {
+      // Reduce TRL by 1 (minimum 3)
+      adjustedTRL = Math.max(3, progress.currentTRL - 1);
+      // Reset validations to 0
+      adjustedValidations = 0;
+      console.log(`Pivot: TRL reduced from ${progress.currentTRL} to ${adjustedTRL}, validations reset to 0`);
+    }
+
     const newTeamData = {
   ...teamData,
   teamName,
@@ -1776,9 +1868,11 @@ const gameId = getGameId();
   },
   investorEquity: totalInvestorEquity,  // Cumulative total at top level
   interviewCount: progress.interviewsTotal,
-  validationCount: progress.validationsTotal,
+  validationCount: adjustedValidations,
   completedActivities: newCompletedActivities,
-  trl: progress.currentTRL,
+  trl: adjustedTRL,
+  pivotHistory: [...(teamData.pivotHistory || []), ...pivotHistory],
+  lastPivotRound: activities.pivot ? currentRound : teamData.lastPivotRound,
 
   // Achievement tracking fields
   wentNegative: (teamData.wentNegative || false) || progress.cash < 0,
@@ -2482,6 +2576,16 @@ const gameId = getGameId();
             setDiversityEventSeen(true);
           }}
           onHire={handleHireProfile}
+        />
+      )}
+
+      {/* Pivot Confirmation Modal */}
+      {showPivotModal && (
+        <PivotReasonSelector
+          onConfirm={handlePivotConfirm}
+          onCancel={handlePivotCancel}
+          currentTRL={teamData.trl || 3}
+          validationCount={teamData.validationCount || 0}
         />
       )}
 

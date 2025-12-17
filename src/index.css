@@ -414,6 +414,27 @@ body {
   background: radial-gradient(circle at top left, rgba(193, 254, 0, 0.18), transparent 60%), #020617;
 }
 
+.activity-card.pivot-activity {
+  border: 2px dashed #f59e0b;
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.05), rgba(0, 0, 0, 0.2));
+}
+
+.activity-card.pivot-activity:hover {
+  border-color: #fbbf24;
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.1), rgba(0, 0, 0, 0.2));
+}
+
+.activity-card.pivot-activity.checked {
+  border-style: solid;
+  border-color: #f59e0b;
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.15), rgba(0, 0, 0, 0.2));
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.6), 0 0 40px rgba(245, 158, 11, 0.3);
+}
+
+.activity-card.pivot-activity .activity-name {
+  color: #fbbf24;
+}
+
 .activity-checkbox {
   width: 20px;
   height: 20px;

@@ -1120,6 +1120,12 @@ lowRunwayWarning: {
       description: "Advance your technology towards market readiness.",
       activities: ["prototypeDevelopment", "pilotProject", "incubatorApplication"],
     },
+    {
+      id: "strategy",
+      title: "Strategy",
+      description: "Major business decisions that reshape your direction.",
+      activities: ["pivot"],
+    },
   ],
 
   // ============================================
@@ -1417,6 +1423,39 @@ lowRunwayWarning: {
       expert: "incubator",
       triggersEvent: "incubatorAccepted",
       oneTimeOnly: true,
+    },
+
+    // === STRATEGY & PIVOTING ===
+    pivot: {
+      name: "🔄 Pivot Business Direction",
+      stickerCost: 0,  // Internal decision, no expert needed
+      costTime: 250,   // Very time intensive - rebuilding your approach!
+      costMoney: 5000, // Some costs for new materials, prototypes, etc.
+      category: 'strategy',
+      description: "Major change in business direction based on market feedback",
+
+      // Pivot effects
+      effects: {
+        trlReduction: 1,           // Lose 1 TRL level (new direction needs validation)
+        interviewsReset: false,     // Keep your interview count (you learned from them!)
+        validationsReset: true,     // Lose validations (they were for old direction)
+        prototypeReset: true,       // Prototype needs rework
+      },
+
+      // Requirements
+      requires: {
+        minInterviews: 2,          // Must have done customer discovery first
+        minRound: 2,               // Can't pivot in round 1
+      },
+
+      // Unlocks
+      unlocks: [],
+
+      // Warning shown before confirming
+      warning: "⚠️ Pivoting will reset your customer validations and reduce TRL by 1. Your interview insights remain. Are you sure?",
+
+      // Learning moment
+      learningMoment: "Pivoting based on customer feedback is smart. Pivoting without customer feedback is just guessing.",
     },
   },
 

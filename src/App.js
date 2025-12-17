@@ -1924,10 +1924,23 @@ const gameId = getGameId();
       ),
     };
 
+    console.log("🔥 Attempting to save round data to Firestore:", {
+      gameId,
+      oderId,
+      round: currentRound,
+      path: `games/${gameId}/teams/${oderId}/rounds/${currentRound}`
+    });
+
     setDoc(
       doc(db, "games", gameId, "teams", oderId, "rounds", String(currentRound)),
       roundData
-    ).catch((err) => console.error("Firebase sync error:", err));
+    )
+      .then(() => console.log("✅ Round data saved successfully"))
+      .catch((err) => {
+        console.error("❌ Firebase round save error:", err);
+        console.error("Error code:", err.code);
+        console.error("Error message:", err.message);
+      });
 
     const teamDocData = {
       oderId,
@@ -1943,9 +1956,22 @@ const gameId = getGameId();
       teamDocData.licenceAgreement = newTeamData.licenceAgreement || null;
     }
 
+    console.log("🔥 Attempting to save team data to Firestore:", {
+      gameId,
+      oderId,
+      path: `games/${gameId}/teams/${oderId}`,
+      teamData: teamDocData
+    });
+
     setDoc(doc(db, "games", gameId, "teams", oderId), teamDocData, {
       merge: true,
-    }).catch((err) => console.error("Firebase team update error:", err));
+    })
+      .then(() => console.log("✅ Team data saved successfully"))
+      .catch((err) => {
+        console.error("❌ Firebase team save error:", err);
+        console.error("Error code:", err.code);
+        console.error("Error message:", err.message);
+      });
   };
 
   const startNextRound = async () => {

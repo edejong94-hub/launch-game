@@ -1743,6 +1743,18 @@ const gameId = getGameId();
     const newEquityThisRound = Number(funding.investorEquity || 0);
     const totalInvestorEquity = previousInvestorEquity + newEquityThisRound;
 
+    // Calculate stickers used this round
+    const stickersUsedThisRound = Object.keys(activities).reduce((sum, activityKey) => {
+      if (activities[activityKey]) {
+        const activity = config.activities?.[activityKey];
+        return sum + (activity?.stickerCost || 0);
+      }
+      return sum;
+    }, 0);
+
+    // Calculate total spending this round for achievement tracking
+    const spendingThisRound = progress.totalMoneySpent || 0;
+
     const newTeamData = {
   ...teamData,
   teamName,
@@ -1767,6 +1779,17 @@ const gameId = getGameId();
   validationCount: progress.validationsTotal,
   completedActivities: newCompletedActivities,
   trl: progress.currentTRL,
+
+  // Achievement tracking fields
+  wentNegative: (teamData.wentNegative || false) || progress.cash < 0,
+  leftUniversityRound: teamData.leftUniversityRound ||
+    (employmentStatus !== 'university' && teamData.employmentStatus === 'university' ? currentRound : null),
+  totalStickersUsed: (teamData.totalStickersUsed || 0) + stickersUsedThisRound,
+  maxSpendInRound: Math.max(teamData.maxSpendInRound || 0, spendingThisRound),
+  pivotCount: (teamData.pivotCount || 0) + (activities.pivot ? 1 : 0),
+  totalInvestment: (teamData.totalInvestment || 0) + Number(funding.investment || 0),
+  totalRevenue: (teamData.totalRevenue || 0) + Number(funding.revenue || 0),
+  loanInterest: Math.max(teamData.loanInterest || 0, Number(funding.loanInterest || 0)),
 };
 
     if (isResearchMode) {

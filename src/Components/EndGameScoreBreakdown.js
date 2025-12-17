@@ -71,30 +71,27 @@ const calculateMetricScore = (value, target, weight) => {
   return ratio * weight;
 };
 
-// Check if a bonus condition is met
-const checkBonus = (bonusId, teamData) => {
-  switch (bonusId) {
-    case 'grantWinner':
-      return teamData.completedActivities?.some(a => 
-        ['grantTakeoff', 'grantWBSO', 'grantRegional'].includes(a)
-      ) && (teamData.funding?.subsidy > 0);
-    case 'incubator':
-      return teamData.completedActivities?.includes('incubatorApplication');
-    case 'balancedTeam':
-      const profiles = teamData.teamProfiles || [];
-      const types = new Set(profiles.map(p => {
-        if (p === 'scientist' || p === 'product') return 'tech';
-        if (p === 'business' || p === 'market') return 'commercial';
-        return 'ops';
-      }));
-      return types.size >= 2;
-    case 'goodLicence':
-      return teamData.licenceAgreement === 'balanced';
-    case 'noBankruptcy':
-      return !teamData.wentNegative;
-    default:
-      return false;
-  }
+// Evaluate achievements based on config conditions
+const evaluateAchievements = (teamData, config) => {
+  const achievements = [];
+  const bonuses = config.endGameScoring?.bonuses || [];
+  const conditions = config.endGameScoring?.achievementConditions || {};
+
+  bonuses.forEach(bonus => {
+    const conditionFn = conditions[bonus.condition];
+    if (conditionFn && conditionFn(teamData)) {
+      achievements.push(bonus);
+    }
+  });
+
+  // Sort: positive first, then negative, by absolute points
+  achievements.sort((a, b) => {
+    if (a.points >= 0 && b.points < 0) return -1;
+    if (a.points < 0 && b.points >= 0) return 1;
+    return Math.abs(b.points) - Math.abs(a.points);
+  });
+
+  return achievements;
 };
 
 // Get ranking based on total score
@@ -148,11 +145,11 @@ const EndGameScoreBreakdown = ({ teamData, progress, config }) => {
     };
   });
 
-  // Calculate bonuses
-  const earnedBonuses = SCORING_CONFIG.bonuses.filter(bonus => 
-    checkBonus(bonus.id, teamData)
-  );
-  const bonusPoints = earnedBonuses.reduce((sum, b) => sum + b.points, 0);
+  // Evaluate achievements from config
+  const achievements = evaluateAchievements(teamData, config);
+  const positiveAchievements = achievements.filter(a => a.points >= 0);
+  const negativeAchievements = achievements.filter(a => a.points < 0);
+  const bonusPoints = achievements.reduce((sum, a) => sum + a.points, 0);
 
   // Calculate total
   const baseScore = categoryScores.reduce((sum, c) => sum + c.score, 0);
@@ -260,29 +257,61 @@ const EndGameScoreBreakdown = ({ teamData, progress, config }) => {
             ))}
           </div>
 
-          {/* Bonuses */}
-          <div className="bonuses-section">
-            <h4>🏆 Achievement Bonuses</h4>
-            <div className="bonuses-grid">
-              {SCORING_CONFIG.bonuses.map(bonus => {
-                const earned = earnedBonuses.some(b => b.id === bonus.id);
-                return (
-                  <div 
-                    key={bonus.id} 
-                    className={`bonus-item ${earned ? 'earned' : 'not-earned'}`}
-                  >
-                    <span className="bonus-icon">{bonus.icon}</span>
-                    <span className="bonus-name">{bonus.name}</span>
-                    <span className="bonus-points">
-                      {earned ? `+${bonus.points}` : `(+${bonus.points})`}
-                    </span>
-                  </div>
-                );
-              })}
+          {/* Achievements */}
+          <div className="achievements-section">
+            <div className="achievements-header">
+              <h4>🏆 Achievements</h4>
+              <span className={`achievements-total ${bonusPoints < 0 ? 'negative' : ''}`}>
+                {bonusPoints >= 0 ? '+' : ''}{bonusPoints} pts
+              </span>
             </div>
-            <div className="bonus-total">
-              Total Bonus: <strong>+{bonusPoints} points</strong>
-            </div>
+
+            {/* Positive achievements */}
+            {positiveAchievements.length > 0 && (
+              <div className="achievements-group positive">
+                <div className="achievements-group-title">🌟 Accomplishments</div>
+                <div className="achievements-list">
+                  {positiveAchievements.map(achievement => (
+                    <div key={achievement.id} className="achievement-item positive">
+                      <div className="achievement-main">
+                        <span className="achievement-name">{achievement.name}</span>
+                        <span className="achievement-points">+{achievement.points}</span>
+                      </div>
+                      <p className="achievement-description">{achievement.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Negative achievements */}
+            {negativeAchievements.length > 0 && (
+              <div className="achievements-group negative">
+                <div className="achievements-group-title">💀 Room for Improvement</div>
+                <div className="achievements-list">
+                  {negativeAchievements.map(achievement => (
+                    <div key={achievement.id} className="achievement-item negative">
+                      <div className="achievement-main">
+                        <span className="achievement-name">{achievement.name}</span>
+                        <span className="achievement-points">{achievement.points}</span>
+                      </div>
+                      <p className="achievement-description">{achievement.description}</p>
+                      {achievement.roast && (
+                        <p className="achievement-roast">"{achievement.roast}"</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No achievements at all */}
+            {achievements.length === 0 && (
+              <div className="no-achievements">
+                <span>🤷</span>
+                <p>No special achievements... just average, we guess.</p>
+              </div>
+            )}
           </div>
 
           {/* Summary */}
@@ -516,61 +545,160 @@ const styles = `
   font-weight: 600;
 }
 
-.bonuses-section {
+.achievements-section {
   background: rgba(30, 41, 59, 0.5);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1.5rem;
 }
 
-.bonuses-section h4 {
-  margin: 0 0 1rem 0;
+.achievements-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.achievements-header h4 {
+  margin: 0;
   color: #f1f5f9;
   font-size: 1rem;
 }
 
-.bonuses-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.bonus-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.8125rem;
-}
-
-.bonus-item.earned {
-  background: rgba(34, 197, 94, 0.15);
+.achievements-total {
+  font-size: 1.125rem;
+  font-weight: 700;
   color: #22c55e;
 }
 
-.bonus-item.not-earned {
-  background: rgba(100, 116, 139, 0.1);
+.achievements-total.negative {
+  color: #ef4444;
+}
+
+.achievements-group {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.achievements-group.positive {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.achievements-group.negative {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.achievements-group-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.achievements-group.positive .achievements-group-title {
+  color: #4ade80;
+}
+
+.achievements-group.negative .achievements-group-title {
+  color: #f87171;
+}
+
+.achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.achievement-item {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
+  border-left: 4px solid;
+}
+
+.achievement-item.positive {
+  border-left-color: #22c55e;
+}
+
+.achievement-item.negative {
+  border-left-color: #ef4444;
+  animation: shakeIn 0.5s ease-out;
+}
+
+.achievement-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.achievement-name {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: #f5f5f5;
+}
+
+.achievement-points {
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 6px;
+}
+
+.achievement-item.positive .achievement-points {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.achievement-item.negative .achievement-points {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.achievement-description {
+  font-size: 0.8125rem;
+  color: #a3a3a3;
+  margin: 0;
+}
+
+.achievement-roast {
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: #fbbf24;
+  margin: 0.5rem 0 0 0;
+  padding: 0.5rem 0.75rem;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: 6px;
+  border-left: 2px solid #fbbf24;
+}
+
+.no-achievements {
+  text-align: center;
+  padding: 2rem;
   color: #64748b;
 }
 
-.bonus-icon {
-  font-size: 1rem;
+.no-achievements span {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
 }
 
-.bonus-name {
-  flex: 1;
+.no-achievements p {
+  margin: 0;
+  font-size: 0.9375rem;
 }
 
-.bonus-points {
-  font-weight: 600;
-}
-
-.bonus-total {
-  text-align: right;
-  color: #94a3b8;
-  font-size: 0.875rem;
+@keyframes shakeIn {
+  0% { transform: translateX(-10px); opacity: 0; }
+  25% { transform: translateX(5px); }
+  50% { transform: translateX(-3px); }
+  75% { transform: translateX(2px); }
+  100% { transform: translateX(0); opacity: 1; }
 }
 
 .score-summary {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronUp,
   ChevronDown
@@ -157,24 +157,39 @@ const EndGameScoreBreakdown = ({ teamData, progress, config }) => {
   const ranking = getRanking(totalScore);
 
   // Animate score on mount
+  const currentRef = useRef(0);
+  const isMountedRef = useRef(true);
+
   useEffect(() => {
+    isMountedRef.current = true;
     const duration = 2000;
     const steps = 60;
     const increment = totalScore / steps;
-    let current = 0;
-    
+    currentRef.current = 0;
+    let detailsTimeout = null;
+
     const timer = setInterval(() => {
-      current += increment;
-      if (current >= totalScore) {
-        setAnimatedScore(totalScore);
+      currentRef.current += increment;
+      if (currentRef.current >= totalScore) {
+        if (isMountedRef.current) {
+          setAnimatedScore(totalScore);
+          detailsTimeout = setTimeout(() => {
+            if (isMountedRef.current) setShowDetails(true);
+          }, 500);
+        }
         clearInterval(timer);
-        setTimeout(() => setShowDetails(true), 500);
       } else {
-        setAnimatedScore(Math.round(current));
+        if (isMountedRef.current) {
+          setAnimatedScore(Math.round(currentRef.current));
+        }
       }
     }, duration / steps);
 
-    return () => clearInterval(timer);
+    return () => {
+      isMountedRef.current = false;
+      clearInterval(timer);
+      if (detailsTimeout) clearTimeout(detailsTimeout);
+    };
   }, [totalScore]);
 
   return (

@@ -371,9 +371,10 @@ const LiveDashboard = () => {
   const isResearchMode = getGameMode() === 'research';
   const totalRounds = 4;
 
-  // Subscribe to team updates
+  // Subscribe to team updates - single unified listener
   useEffect(() => {
     const teamsRef = collection(db, 'games', gameId, 'teams');
+    // Note: Add .limit(100) if you expect more than 100 teams for performance
     const q = query(teamsRef, orderBy('lastUpdated', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -383,10 +384,11 @@ const LiveDashboard = () => {
       snapshot.docChanges().forEach(change => {
         if (change.type === 'modified' || change.type === 'added') {
           const data = change.doc.data();
-          if (data.teamName) {
+          // Validate data structure before using
+          if (data?.teamName && typeof data.teamName === 'string') {
             activities.push({
               teamName: data.teamName,
-              action: change.type === 'added' ? 'joined the game' : `submitted Round ${data.currentRound}`,
+              action: change.type === 'added' ? 'joined the game' : `submitted Round ${data.currentRound || 1}`,
               timestamp: new Date(),
             });
           }
@@ -395,7 +397,8 @@ const LiveDashboard = () => {
 
       snapshot.docs.forEach(doc => {
         const data = doc.data();
-        if (data.teamName) {
+        // Validate data structure before adding to teams
+        if (data?.teamName && typeof data.teamName === 'string') {
           teamsData.push({
             id: doc.id,
             ...data,
@@ -416,57 +419,6 @@ const LiveDashboard = () => {
     });
 
     return () => unsubscribe();
-  }, [gameId]);
-
-  // Also listen to individual round submissions for more detailed updates
-  useEffect(() => {
-    const teamsRef = collection(db, 'games', gameId, 'teams');
-
-    const unsubscribeTeams = onSnapshot(teamsRef, async (snapshot) => {
-      // For each team, get their latest round data
-      const updatedTeams = await Promise.all(
-        snapshot.docs.map(async (teamDoc) => {
-          const teamData = teamDoc.data();
-          const currentRound = teamData.currentRound || 1;
-
-          // Try to get the latest round data
-          try {
-            const roundRef = collection(db, 'games', gameId, 'teams', teamDoc.id, 'rounds');
-            const roundQuery = query(roundRef, orderBy('round', 'desc'));
-
-            return new Promise((resolve) => {
-              const unsubRound = onSnapshot(roundQuery, (roundSnapshot) => {
-                if (!roundSnapshot.empty) {
-                  const latestRound = roundSnapshot.docs[0].data();
-                  resolve({
-                    id: teamDoc.id,
-                    ...teamData,
-                    ...latestRound,
-                    currentRound: latestRound.round || currentRound,
-                  });
-                } else {
-                  resolve({
-                    id: teamDoc.id,
-                    ...teamData,
-                  });
-                }
-                unsubRound();
-              });
-            });
-          } catch (err) {
-            return {
-              id: teamDoc.id,
-              ...teamData,
-            };
-          }
-        })
-      );
-
-      setTeams(updatedTeams.filter(t => t.teamName));
-      setLastUpdate(new Date());
-    });
-
-    return () => unsubscribeTeams();
   }, [gameId]);
 
   if (loading) {

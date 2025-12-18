@@ -6,7 +6,8 @@ const GameEventPopup = ({ event, onDismiss, onAction }) => {
 
   useEffect(() => {
     // Animate in
-    setTimeout(() => setIsVisible(true), 100);
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleDismiss = () => {

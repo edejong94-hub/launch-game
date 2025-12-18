@@ -55,17 +55,17 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
         <h3>Score Composition</h3>
         <div className="composition-chart">
           <div className="composition-bar">
-            <div 
-              className="base-score-segment" 
-              style={{ width: `${(scoreData.baseScore / scoreData.totalScore) * 100}%` }}
+            <div
+              className="base-score-segment"
+              style={{ width: `${(scoreData.baseScore / (scoreData.totalScore || 1)) * 100}%` }}
               title={`Base Score: ${scoreData.baseScore}`}
             >
               <span>Base: {scoreData.baseScore}</span>
             </div>
             {scoreData.bonusPoints > 0 && (
-              <div 
+              <div
                 className="bonus-score-segment"
-                style={{ width: `${(scoreData.bonusPoints / scoreData.totalScore) * 100}%` }}
+                style={{ width: `${(scoreData.bonusPoints / (scoreData.totalScore || 1)) * 100}%` }}
                 title={`Bonus Points: ${scoreData.bonusPoints}`}
               >
                 <span>Bonus: +{scoreData.bonusPoints}</span>
@@ -75,7 +75,7 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
         </div>
       </div>
 
-      {scoreData.earnedBonuses.length > 0 && (
+      {scoreData.earnedBonuses?.length > 0 && (
         <div className="achievements-section">
           <h3>🏆 Achievements Unlocked</h3>
           <div className="achievement-grid">
@@ -145,7 +145,7 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
       <h3>Detailed Metric Analysis</h3>
       
       <div className="metric-cards">
-        {Object.entries(scoreData.metricScores).map(([id, metric]) => {
+        {Object.entries(scoreData.metricScores || {}).map(([id, metric]) => {
           const percentile = rankedTeams.length > 0 ? 
             calculatePercentile(team, id, rankedTeams) : 50;
           

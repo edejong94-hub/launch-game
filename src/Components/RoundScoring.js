@@ -11,9 +11,11 @@ const RoundScoring = ({ team, mode, currentRound, onClose }) => {
     if (team) {
       const data = calculateTeamScore(team, mode);
       setScoreData(data);
-      
+
       // Trigger animation
-      setTimeout(() => setAnimationPhase('showing'), 100);
+      const timer = setTimeout(() => setAnimationPhase('showing'), 100);
+
+      return () => clearTimeout(timer);
     }
   }, [team, mode]);
 
@@ -49,7 +51,7 @@ const RoundScoring = ({ team, mode, currentRound, onClose }) => {
           </div>
         </div>
 
-        {scoreData.earnedBonuses.length > 0 && (
+        {scoreData.earnedBonuses?.length > 0 && (
           <div className="bonuses-section">
             <h3>🎉 Bonuses Earned This Round</h3>
             <div className="bonus-list">

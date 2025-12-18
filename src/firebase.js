@@ -1,14 +1,28 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
+// Firebase configuration from environment variables
+// IMPORTANT: Never commit .env.local to version control!
 const firebaseConfig = {
-  apiKey: "AIzaSyBnkDjxX18z5FuCxsmDPLBg_30OGg04wK4",
-  authDomain: "launch-game-99b20.firebaseapp.com",
-  projectId: "launch-game-99b20",
-  storageBucket: "launch-game-99b20.firebasestorage.app",
-  messagingSenderId: "962449052312",
-  appId: "1:962449052312:web:3a6f916c4226e3ec1b76ed"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
+
+// Validate that all required config values are present
+const requiredConfigKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+const missingKeys = requiredConfigKeys.filter(key => !firebaseConfig[key]);
+
+if (missingKeys.length > 0) {
+  throw new Error(
+    `Missing required Firebase configuration. Please check your .env.local file.\n` +
+    `Missing keys: ${missingKeys.join(', ')}\n` +
+    `See .env.example for reference.`
+  );
+}
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);

@@ -15,8 +15,15 @@ import {
   Unlock,
 } from "lucide-react";
 import { db } from "./firebase";
-import foundedLogo from "./logo.svg";  
+import foundedLogo from "./logo.svg";
 import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { useToast } from './Components/Toast';
+import {
+  getFirebaseErrorMessage,
+  logError,
+  retryOperation,
+  isOnline,
+} from './utils/errorHandling';
 
 // Import configurations
 import { STARTUP_CONFIG } from "./Configs/startup-config";
@@ -59,10 +66,20 @@ const sanitizeForFirestore = (obj) => {
   return obj;
 };
 
-// Get gameId from URL
+// Get gameId from URL with validation
 const getGameId = () => {
   const params = new URLSearchParams(window.location.search);
-  return params.get("gameId") || "demo-game";
+  const gameId = params.get("gameId") || "demo-game";
+
+  // Validate gameId: alphanumeric, hyphens, underscores only (2-50 chars)
+  const validGameIdPattern = /^[a-zA-Z0-9_-]{2,50}$/;
+
+  if (!validGameIdPattern.test(gameId)) {
+    console.error("Invalid gameId format:", gameId);
+    return "demo-game"; // Fallback to safe default
+  }
+
+  return gameId;
 };
 
 // ============================================
@@ -75,6 +92,22 @@ const saveSession = (data) => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
   } catch (err) {
     console.error("Failed to save session:", err);
+
+    // Check for quota exceeded error
+    if (err.name === 'QuotaExceededError' || err.code === 22) {
+      console.error('⚠️ localStorage quota exceeded - clearing old data and retrying');
+
+      // Try to clear old session data and retry
+      try {
+        // Clear only this game's session, keep oderId
+        localStorage.removeItem(SESSION_KEY);
+        localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+        console.log('✅ Session saved after clearing old data');
+      } catch (retryErr) {
+        console.error('❌ Still failed after clearing - localStorage may be full');
+        // At this point, Firebase sync is the only backup
+      }
+    }
   }
 };
 
@@ -95,6 +128,56 @@ const clearSession = () => {
   } catch (err) {
     console.error("Failed to clear session:", err);
   }
+};
+
+// Validate and sanitize initialData structure
+const validateInitialData = (data) => {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  // Ensure required fields exist with proper types
+  const validated = {
+    teamName: typeof data.teamName === 'string' ? data.teamName : "",
+    founders: typeof data.founders === 'number' && data.founders > 0 ? data.founders : (isResearchMode ? 3 : 4),
+    office: typeof data.office === 'string' ? data.office : (isResearchMode ? "university" : "attic"),
+    legalForm: data.legalForm || null,
+    currentRound: typeof data.currentRound === 'number' && data.currentRound >= 1 ? data.currentRound : 1,
+    showReport: typeof data.showReport === 'boolean' ? data.showReport : false,
+    ideaConfirmed: typeof data.ideaConfirmed === 'boolean' ? data.ideaConfirmed : false,
+    shownEvents: Array.isArray(data.shownEvents) ? data.shownEvents : [],
+    diversityEventSeen: typeof data.diversityEventSeen === 'boolean' ? data.diversityEventSeen : false,
+    teamProfiles: Array.isArray(data.teamProfiles) ? data.teamProfiles : ["", "", ""],
+    licenceAgreement: data.licenceAgreement || null,
+    hiredProfiles: Array.isArray(data.hiredProfiles) ? data.hiredProfiles : [],
+    startupIdea: typeof data.startupIdea === 'object' && data.startupIdea !== null ? data.startupIdea : { idea: "", problem: "", solution: "", target: "" },
+    employmentStatus: typeof data.employmentStatus === 'string' ? data.employmentStatus : 'university',
+    teamData: typeof data.teamData === 'object' && data.teamData !== null ? {
+      cash: typeof data.teamData.cash === 'number' ? data.teamData.cash : GAME_CONFIG.gameInfo.startingCapital,
+      phase: typeof data.teamData.phase === 'number' ? data.teamData.phase : 1,
+      employees: typeof data.teamData.employees === 'number' ? data.teamData.employees : 0,
+      hasSenior: typeof data.teamData.hasSenior === 'boolean' ? data.teamData.hasSenior : false,
+      seniorUnlocked: typeof data.teamData.seniorUnlocked === 'boolean' ? data.teamData.seniorUnlocked : false,
+      completedActivities: Array.isArray(data.teamData.completedActivities) ? data.teamData.completedActivities : [],
+      trl: typeof data.teamData.trl === 'number' ? data.teamData.trl : 3,
+      interviewCount: typeof data.teamData.interviewCount === 'number' ? data.teamData.interviewCount : 0,
+      validationCount: typeof data.teamData.validationCount === 'number' ? data.teamData.validationCount : 0,
+      investorEquity: typeof data.teamData.investorEquity === 'number' ? data.teamData.investorEquity : 0,
+    } : {
+      cash: GAME_CONFIG.gameInfo.startingCapital,
+      phase: 1,
+      employees: 0,
+      hasSenior: false,
+      seniorUnlocked: false,
+      completedActivities: [],
+      trl: 3,
+      interviewCount: 0,
+      validationCount: 0,
+      investorEquity: 0,
+    },
+  };
+
+  return validated;
 };
 
 // ============================================
@@ -432,7 +515,10 @@ const isActivityUnlocked = (activityKey, activity, teamData, config) => {
     }
 
     // Check if already pivoted this round - prevent multiple pivots per round
-    const lastPivotRound = teamData.lastPivotRound || teamData.pivotHistory?.[teamData.pivotHistory.length - 1]?.round;
+    const lastPivotRound = teamData.lastPivotRound ||
+      (teamData.pivotHistory && teamData.pivotHistory.length > 0
+        ? teamData.pivotHistory[teamData.pivotHistory.length - 1]?.round
+        : undefined);
     if (lastPivotRound === currentRound) {
       return {
         unlocked: false,
@@ -1544,6 +1630,9 @@ const EmploymentStatusSelector = ({
 // MAIN TEAM GAME FORM COMPONENT
 // ============================================
 const TeamGameForm = ({ config, initialData, onReset }) => {
+  // Initialize toast notification system
+  const toast = useToast();
+
   const [teamName, setTeamName] = useState(initialData?.teamName || "");
   const [founders, setFounders] = useState(initialData?.founders || (isResearchMode ? 3 : 4));
   const [office, setOffice] = useState(initialData?.office || (isResearchMode ? "university" : "attic"));
@@ -1553,9 +1642,11 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   const [juniorHires, setJuniorHires] = useState(0);
   const [showReport, setShowReport] = useState(initialData?.showReport || false);
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [ideaConfirmed, setIdeaConfirmed] = useState(initialData?.ideaConfirmed || false);
   const [activeEvent, setActiveEvent] = useState(null);
   const [shownEvents, setShownEvents] = useState(new Set(initialData?.shownEvents || []));
+  const [isOffline, setIsOffline] = useState(!isOnline());
   const [showEndGameScore, setShowEndGameScore] = useState(false);
   const totalRounds = config.gameInfo.totalRounds;
 const startingCapital = config.gameInfo.startingCapital;
@@ -1620,6 +1711,28 @@ const startingCapital = config.gameInfo.startingCapital;
   },
   [config.gameEvents, shownEvents]
 );
+
+  // Network status detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      toast.success('Connection restored!');
+    };
+
+    const handleOffline = () => {
+      setIsOffline(true);
+      toast.warning('You are offline. Changes will be saved locally.', 0);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [toast]);
+
   const licenceUnlocked =
     teamData.completedActivities?.includes("licenceNegotiation") ||
     activities.licenceNegotiation;
@@ -1659,7 +1772,7 @@ useEffect(() => {
         diversityEventSeen,
         startupIdea,
         teamData,
-        shownEvents: Array.from(shownEvents),
+        shownEvents: shownEvents instanceof Set ? Array.from(shownEvents) : (Array.isArray(shownEvents) ? shownEvents : []),
         employmentStatus,
       });
     }
@@ -1707,7 +1820,7 @@ useEffect(() => {
 useEffect(() => {
 // Only listen when game is complete and showing report
 if (currentRound === totalRounds && showReport) {
-const gameId = getGameId();
+  const gameId = getGameId();
   // Listen for facilitator to release scores
   const unsubscribe = onSnapshot(
     doc(db, "games", gameId, "settings", "game"),
@@ -1720,9 +1833,13 @@ const gameId = getGameId();
       console.error("Error listening for score release:", error);
     }
   );
-  
+
+  // Return cleanup function
   return () => unsubscribe();
 }
+
+// Return empty cleanup if listener not created
+return () => {};
 }, [currentRound, showReport, totalRounds]);
   useEffect(() => {
     if (
@@ -1811,10 +1928,54 @@ const gameId = getGameId();
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) return; // Prevent double submission
+
     if (!teamName) {
       setFormError("Fill in your team name first.");
       return;
+    }
+
+    // Validate equity doesn't exceed 100%
+    const newEquityInput = Number(funding.investorEquity || 0);
+    const currentEquity = teamData.investorEquity || 0;
+    const projectedTotalEquity = currentEquity + newEquityInput;
+
+    if (newEquityInput < 0) {
+      setFormError("Equity percentage cannot be negative.");
+      return;
+    }
+
+    if (projectedTotalEquity > 100) {
+      setFormError(`Total equity cannot exceed 100%. You've already given away ${currentEquity}%. Maximum you can give this round: ${100 - currentEquity}%.`);
+      return;
+    }
+
+    // Validate all money inputs are positive numbers
+    const moneyFields = {
+      revenue: 'Revenue',
+      subsidy: 'Subsidy',
+      investment: 'Investment',
+      loan: 'Loan'
+    };
+
+    for (const [field, label] of Object.entries(moneyFields)) {
+      if (funding[field]) {
+        const value = Number(funding[field]);
+        if (isNaN(value)) {
+          setFormError(`${label} must be a valid number.`);
+          return;
+        }
+        if (value < 0) {
+          setFormError(`${label} cannot be negative.`);
+          return;
+        }
+      }
+    }
+
+    // Check network status before proceeding
+    if (!isOnline()) {
+      toast.warning('You are offline. Data will be saved locally and synced when you reconnect.', 8000);
     }
 
     setFormError("");
@@ -1920,6 +2081,7 @@ const gameId = getGameId();
       newTeamData.hiredProfiles = hiredProfiles;
     }
 
+    setIsSubmitting(true);
     setTeamData(newTeamData);
     setShowReport(true);
 
@@ -1959,47 +2121,68 @@ const gameId = getGameId();
       path: `games/${gameId}/teams/${oderId}/rounds/${currentRound}`
     });
 
-    setDoc(
-      doc(db, "games", gameId, "teams", oderId, "rounds", String(currentRound)),
-      sanitizeForFirestore(roundData)
-    )
-      .then(() => console.log("✅ Round data saved successfully"))
-      .catch((err) => {
-        console.error("❌ Firebase round save error:", err);
-        console.error("Error code:", err.code);
-        console.error("Error message:", err.message);
+    try {
+      // Save round data with retry logic
+      await retryOperation(async () => {
+        await setDoc(
+          doc(db, "games", gameId, "teams", oderId, "rounds", String(currentRound)),
+          sanitizeForFirestore(roundData)
+        );
+      }, 3, 1000);  // 3 retries, 1 second initial delay
+
+      console.log("✅ Round data saved successfully");
+
+      // Save team data with retry logic
+      const teamDocData = {
+        oderId,
+        teamName: newTeamData.teamName,
+        startupIdea: newTeamData.startupIdea,
+        currentRound,
+        gameMode: config.gameMode,
+        lastUpdated: serverTimestamp(),
+      };
+
+      if (isResearchMode) {
+        teamDocData.teamProfiles = newTeamData.teamProfiles || null;
+        teamDocData.licenceAgreement = newTeamData.licenceAgreement || null;
+      }
+
+      console.log("🔥 Attempting to save team data to Firestore:", {
+        gameId,
+        oderId,
+        path: `games/${gameId}/teams/${oderId}`,
+        teamData: teamDocData
       });
 
-    const teamDocData = {
-      oderId,
-      teamName: newTeamData.teamName,
-      startupIdea: newTeamData.startupIdea,
-      currentRound,
-      gameMode: config.gameMode,
-      lastUpdated: serverTimestamp(),
-    };
+      await retryOperation(async () => {
+        await setDoc(
+          doc(db, "games", gameId, "teams", oderId),
+          sanitizeForFirestore(teamDocData),
+          { merge: true }
+        );
+      }, 3, 1000);
 
-    if (isResearchMode) {
-      teamDocData.teamProfiles = newTeamData.teamProfiles || null;
-      teamDocData.licenceAgreement = newTeamData.licenceAgreement || null;
+      console.log("✅ Team data saved successfully");
+      toast.success('Round submitted successfully!');
+
+    } catch (err) {
+      logError('Submit Round', err, {
+        gameId,
+        oderId,
+        currentRound,
+        teamName
+      });
+
+      const errorMsg = getFirebaseErrorMessage(err);
+      setFormError(errorMsg);
+      toast.error(errorMsg);
+
+      if (!isOnline()) {
+        toast.info('Your progress is saved locally and will sync when you reconnect.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-
-    console.log("🔥 Attempting to save team data to Firestore:", {
-      gameId,
-      oderId,
-      path: `games/${gameId}/teams/${oderId}`,
-      teamData: teamDocData
-    });
-
-    setDoc(doc(db, "games", gameId, "teams", oderId), sanitizeForFirestore(teamDocData), {
-      merge: true,
-    })
-      .then(() => console.log("✅ Team data saved successfully"))
-      .catch((err) => {
-        console.error("❌ Firebase team save error:", err);
-        console.error("Error code:", err.code);
-        console.error("Error message:", err.message);
-      });
   };
 
   const startNextRound = async () => {
@@ -2020,13 +2203,17 @@ const gameId = getGameId();
         const reviewSnap = await getDoc(reviewRef);
 
         if (!reviewSnap.exists() || !reviewSnap.data().approved) {
-          setFormError(
-            "Please wait for facilitator approval before continuing to the next round."
-          );
+          const errorMsg = "Please wait for facilitator approval before continuing to the next round.";
+          setFormError(errorMsg);
+          toast.warning(errorMsg, 6000);
           return;
         }
       } catch (err) {
-        console.error("Error checking approval:", err);
+        logError('Approval Check', err, { gameId, oderId, currentRound });
+        const errorMsg = "Could not verify facilitator approval. Please check your connection and try again.";
+        setFormError(errorMsg);
+        toast.error(errorMsg);
+        return; // Don't proceed if approval check fails
       }
     }
 
@@ -2061,6 +2248,27 @@ const gameId = getGameId();
 
     return (
       <Shell currentRound={0} onReset={onReset}>
+        {/* Toast notification container */}
+        <toast.ToastContainer />
+
+        {/* Offline banner */}
+        {isOffline && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: '#f59e0b',
+            color: 'white',
+            padding: '12px',
+            textAlign: 'center',
+            fontWeight: '600',
+            zIndex: 9998,
+          }}>
+            ⚠️ You are offline. Changes are being saved locally and will sync when you reconnect.
+          </div>
+        )}
+
         <SectionCard
           title="Team Information"
           description="Fill this in before the game starts."
@@ -2254,7 +2462,7 @@ const gameId = getGameId();
         </SectionCard>
 
         {!canStart && (
-          <div className="alert alert-warning" style={{ marginBottom: "1rem" }}>
+          <div className="alert alert-warning" role="alert" aria-live="polite" style={{ marginBottom: "1rem" }}>
             <div className="alert-content">
               <p className="alert-title">Almost there</p>
               <p className="alert-message">
@@ -2287,6 +2495,27 @@ const gameId = getGameId();
   if (showReport) {
     return (
       <Shell currentRound={currentRound} teamName={teamName} onReset={onReset}>
+        {/* Toast notification container */}
+        <toast.ToastContainer />
+
+        {/* Offline banner */}
+        {isOffline && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: '#f59e0b',
+            color: 'white',
+            padding: '12px',
+            textAlign: 'center',
+            fontWeight: '600',
+            zIndex: 9998,
+          }}>
+            ⚠️ You are offline. Changes are being saved locally and will sync when you reconnect.
+          </div>
+        )}
+
         {/* End Game Score Breakdown Modal */}
         {showEndGameScore && currentRound === config.gameInfo.totalRounds && (
           <div
@@ -2530,7 +2759,7 @@ const gameId = getGameId();
           )}
 
           {progress.cash < 0 && (
-            <div className="alert alert-warning" style={{ marginTop: "1.5rem" }}>
+            <div className="alert alert-warning" role="alert" aria-live="assertive" style={{ marginTop: "1.5rem" }}>
               <div className="alert-content">
                 <p className="alert-title">⚠️ Cash flow alert</p>
                 <p className="alert-message">
@@ -2591,6 +2820,8 @@ const gameId = getGameId();
             {formError && (
               <div
                 className="alert alert-warning"
+                role="alert"
+                aria-live="assertive"
                 style={{ marginTop: "1rem" }}
               >
                 <div className="alert-content">
@@ -2610,6 +2841,27 @@ const gameId = getGameId();
   // ============================================
   return (
     <Shell currentRound={currentRound} teamName={teamName} onReset={onReset}>
+      {/* Toast notification container */}
+      <toast.ToastContainer />
+
+      {/* Offline banner */}
+      {isOffline && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#f59e0b',
+          color: 'white',
+          padding: '12px',
+          textAlign: 'center',
+          fontWeight: '600',
+          zIndex: 9998,
+        }}>
+          ⚠️ You are offline. Changes are being saved locally and will sync when you reconnect.
+        </div>
+      )}
+
       {activeEvent && (
         <GameEventPopup
           event={activeEvent}
@@ -3038,7 +3290,7 @@ const gameId = getGameId();
       </SectionCard>
 
       {formError && (
-        <div className="alert alert-warning" style={{ marginBottom: "1rem" }}>
+        <div className="alert alert-warning" role="alert" aria-live="assertive" style={{ marginBottom: "1rem" }}>
           <div className="alert-content">
             <p className="alert-title">Error</p>
             <p className="alert-message">{formError}</p>
@@ -3047,8 +3299,14 @@ const gameId = getGameId();
       )}
 
       <div className="pt-4 pb-10">
-        <button onClick={handleSubmit} className="btn btn-primary btn-full">
-          Submit Round {currentRound}
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
+          aria-live="polite"
+          className="btn btn-primary btn-full"
+        >
+          {isSubmitting ? `Submitting Round ${currentRound}...` : `Submit Round ${currentRound}`}
         </button>
       </div>
     </Shell>
@@ -3066,10 +3324,11 @@ export default function LaunchGame() {
     const restoreSession = async () => {
       // First check localStorage
       const savedSession = loadSession();
-      
+
       if (savedSession && savedSession.teamName) {
-        // We have a local session, use it
-        setInitialData(savedSession);
+        // We have a local session, validate and use it
+        const validatedSession = validateInitialData(savedSession);
+        setInitialData(validatedSession);
         setLoading(false);
         return;
       }
@@ -3080,56 +3339,94 @@ export default function LaunchGame() {
 
       if (oderId && gameId) {
         try {
+          // Check if we're online before trying Firebase
+          if (!isOnline()) {
+            console.warn('Offline - skipping Firebase restore, using localStorage only');
+            setLoading(false);
+            return;
+          }
+
           // Try to restore from Firebase
           const teamDoc = await getDoc(doc(db, "games", gameId, "teams", oderId));
-          
+
           if (teamDoc.exists()) {
             const data = teamDoc.data();
+
+            // Validate required fields exist
+            if (!data.teamName || !data.startupIdea) {
+              console.error("Invalid team data - missing required fields:", { teamName: data.teamName, startupIdea: data.startupIdea });
+              setLoading(false);
+              return;
+            }
+
             const currentRound = data.currentRound || 1;
-            
+
             // Get the latest round data
             const roundDoc = await getDoc(
               doc(db, "games", gameId, "teams", oderId, "rounds", String(currentRound))
             );
-            
+
             if (roundDoc.exists()) {
               const roundData = roundDoc.data();
-              
-              // Restore full session from Firebase
+
+              // Restore full session from Firebase with validated defaults
               const restoredData = {
                 teamName: data.teamName,
-                founders: roundData.founders || (isResearchMode ? 3 : 4),
-                office: roundData.office,
-                legalForm: roundData.legalForm,
+                founders: roundData.founders ?? (isResearchMode ? 3 : 4),
+                office: roundData.office ?? (isResearchMode ? "university" : "attic"),
+                legalForm: roundData.legalForm ?? null,
                 currentRound: currentRound,
                 showReport: true, // They submitted, so show report
                 ideaConfirmed: true,
                 teamProfiles: data.teamProfiles || ["", "", ""],
-                licenceAgreement: data.licenceAgreement,
+                licenceAgreement: data.licenceAgreement ?? null,
                 hiredProfiles: roundData.hiredProfiles || [],
                 diversityEventSeen: currentRound >= 2,
                 startupIdea: data.startupIdea || roundData.startupIdea,
+                employmentStatus: roundData.employmentStatus ?? 'university',
                 teamData: {
-                  cash: roundData.progress?.cash || roundData.cash || GAME_CONFIG.gameInfo.startingCapital,
-                  phase: roundData.phase || 1,
-                  employees: roundData.employees || 0,
-                  hasSenior: roundData.hasSenior || false,
-                  seniorUnlocked: roundData.seniorUnlocked || false,
+                  cash: roundData.progress?.cash ?? roundData.cash ?? GAME_CONFIG.gameInfo.startingCapital,
+                  phase: roundData.phase ?? 1,
+                  employees: roundData.employees ?? 0,
+                  hasSenior: roundData.hasSenior ?? false,
+                  seniorUnlocked: roundData.seniorUnlocked ?? false,
                   completedActivities: roundData.completedActivities || [],
-                  trl: roundData.trl || roundData.progress?.currentTRL || 3,
-                  interviewCount: roundData.interviewCount || roundData.progress?.interviewsTotal || 0,
-                  validationCount: roundData.validationCount || roundData.progress?.validationsTotal || 0,
+                  trl: roundData.trl ?? roundData.progress?.currentTRL ?? 3,
+                  interviewCount: roundData.interviewCount ?? roundData.progress?.interviewsTotal ?? 0,
+                  validationCount: roundData.validationCount ?? roundData.progress?.validationsTotal ?? 0,
+                  investorEquity: roundData.investorEquity ?? 0,
                 },
               };
-              
-              setInitialData(restoredData);
-              saveSession(restoredData); // Save to localStorage for faster future loads
+
+              const validatedData = validateInitialData(restoredData);
+              setInitialData(validatedData);
+              saveSession(validatedData); // Save to localStorage for faster future loads
               setLoading(false);
+              console.log('✅ Session restored from Firebase');
               return;
             }
           }
         } catch (err) {
-          console.error("Error restoring from Firebase:", err);
+          logError('Session Restore', err, { gameId, oderId });
+
+          // Check for specific error types
+          if (err.code === 'permission-denied') {
+            console.error('❌ Firebase permission denied - check Firestore rules');
+          } else if (!isOnline()) {
+            console.warn('⚠️ Offline - falling back to localStorage');
+          } else {
+            console.error('❌ Failed to restore from Firebase:', err.message);
+          }
+
+          // Try localStorage as fallback
+          const localData = loadSession();
+          if (localData?.teamName) {
+            const validatedLocalData = validateInitialData(localData);
+            setInitialData(validatedLocalData);
+            setLoading(false);
+            console.log('✅ Session restored from localStorage (Firebase unavailable)');
+            return;
+          }
         }
       }
 

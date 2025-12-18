@@ -1654,6 +1654,16 @@ const startingCapital = config.gameInfo.startingCapital;
   // Research mode specific state
   const [teamProfiles, setTeamProfiles] = useState(initialData?.teamProfiles || ["", "", ""]);
   const [licenceAgreement, setLicenceAgreement] = useState(initialData?.licenceAgreement || null);
+
+  // Sync teamProfiles array size with founders count
+  useEffect(() => {
+    if (isResearchMode && teamProfiles.length !== founders) {
+      setTeamProfiles(prev => {
+        return Array.from({ length: founders }, (_, i) => prev[i] || "");
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [founders, isResearchMode]);
   const [hiredProfiles, setHiredProfiles] = useState(initialData?.hiredProfiles || []);
   const [showDiversityEvent, setShowDiversityEvent] = useState(false);
   const [diversityEventSeen, setDiversityEventSeen] = useState(initialData?.diversityEventSeen || false);

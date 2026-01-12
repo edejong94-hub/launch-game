@@ -1977,6 +1977,72 @@ return () => {};
     }
   };
 
+  // Register team immediately when Start Form is submitted
+  const registerTeam = async () => {
+    const gameId = getGameId();
+    let oderId = localStorage.getItem("oderId");
+    if (!oderId) {
+      oderId = crypto.randomUUID();
+      localStorage.setItem("oderId", oderId);
+    }
+
+    const teamRegistrationData = {
+      oderId,
+      teamName,
+      startupIdea,
+      gameMode: config.gameMode,
+      currentRound: 0, // 0 means registered but hasn't started Round 1 yet
+      status: 'registered',
+      hasSubmittedStartForm: true,
+      hasSubmittedRound1: false,
+      founderCount: founders,
+      createdAt: serverTimestamp(),
+      lastUpdated: serverTimestamp(),
+
+      // Initial values so dashboard can display something
+      cash: startingCapital,
+      trl: isResearchMode ? 3 : undefined,
+      employmentStatus: 'university',
+      interviewCount: 0,
+      validationCount: 0,
+      investorEquity: 0,
+    };
+
+    if (isResearchMode) {
+      teamRegistrationData.teamProfiles = teamProfiles;
+      teamRegistrationData.licenceAgreement = licenceAgreement;
+      teamRegistrationData.trl = 3;
+    }
+
+    console.log("🔥 Registering team in Firestore:", {
+      gameId,
+      oderId,
+      path: `games/${gameId}/teams/${oderId}`,
+      teamData: teamRegistrationData
+    });
+
+    try {
+      await retryOperation(async () => {
+        await setDoc(
+          doc(db, "games", gameId, "teams", oderId),
+          sanitizeForFirestore(teamRegistrationData),
+          { merge: true }
+        );
+      }, 3, 1000);
+
+      console.log("✅ Team registered successfully");
+      toast.success('Team registered! You will appear on the facilitator dashboard.');
+    } catch (err) {
+      logError('Register Team', err, {
+        gameId,
+        oderId,
+        teamName
+      });
+      // Don't block the user if registration fails - they can still play
+      console.error("⚠️ Failed to register team, but continuing:", err);
+    }
+  };
+
   const handleSubmit = async () => {
     if (isSubmitting) return; // Prevent double submission
 
@@ -2189,6 +2255,20 @@ return () => {};
         currentRound,
         gameMode: config.gameMode,
         lastUpdated: serverTimestamp(),
+        status: currentRound === 0 ? 'registered' : 'playing', // registered when Round 0, playing when Round 1+
+        hasSubmittedRound1: currentRound >= 1, // Mark Round 1 as submitted
+
+        // Include progress data for dashboard display
+        progress: roundData.progress,
+
+        // Include key metrics at top level for easy querying
+        cash: roundData.progress?.cash || startingCapital,
+        trl: roundData.progress?.currentTRL || (isResearchMode ? 3 : undefined),
+        interviewCount: roundData.progress?.interviewsTotal || 0,
+        validationCount: roundData.progress?.validationsTotal || 0,
+        investorEquity: newTeamData.investorEquity || 0,
+        employmentStatus: newTeamData.employmentStatus || 'university',
+        founderCount: founders,
       };
 
       if (isResearchMode) {
@@ -2527,7 +2607,10 @@ return () => {};
 
         <div className="flex justify-end pt-2 pb-10">
           <button
-            onClick={() => setIdeaConfirmed(true)}
+            onClick={() => {
+              setIdeaConfirmed(true);
+              registerTeam(); // Register team immediately when starting
+            }}
             disabled={!canStart}
             className="btn btn-primary"
           >

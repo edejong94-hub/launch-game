@@ -537,6 +537,35 @@ const isActivityUnlocked = (activityKey, activity, teamData, config, currentRoun
     };
   }
 
+  // Check Rabo Innovatielening specific requirements
+  if (activityKey === 'raboInnovatielening' && activity.requirements) {
+    const reqs = activity.requirements;
+
+    // Must be a BV or holding
+    if (reqs.legalForm && !reqs.legalForm.includes(teamData.legalForm)) {
+      return {
+        unlocked: false,
+        reason: '🏦 Requires BV legal form',
+      };
+    }
+
+    // Must have minimum founders
+    if (reqs.minFounders && (teamData.founders || 1) < reqs.minFounders) {
+      return {
+        unlocked: false,
+        reason: `🏦 Requires ${reqs.minFounders}+ founders`,
+      };
+    }
+
+    // Must have left university (at least part-time)
+    if (reqs.employmentStatus && !reqs.employmentStatus.includes(teamData.employmentStatus || 'university')) {
+      return {
+        unlocked: false,
+        reason: '🏦 Must have left university (at least part-time)',
+      };
+    }
+  }
+
   if (activity.requiresActivity) {
     const requiredActivities = Array.isArray(activity.requiresActivity)
       ? activity.requiresActivity

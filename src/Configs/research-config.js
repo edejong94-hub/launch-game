@@ -203,7 +203,7 @@ academicOnlyGrants: ['grantTakeoff'], // NWO Take-off requires university
       icon: "🏦",
       description: "Debt financing, working capital",
       keyTension: "No equity loss, requires collateral/guarantees",
-      activities: ["bankMeeting", "loanApplication"],
+      activities: ["bankMeeting", "loanApplication", "raboInnovatielening"],
       contracts: [
         { id: "loanApplication", name: "Loan Application", description: "Business plan for bank" },
         { id: "loanAgreement", name: "Loan Agreement", description: "Signed loan terms" },
@@ -393,6 +393,20 @@ academicOnlyGrants: ['grantTakeoff'], // NWO Take-off requires university
         "No equity dilution",
         "Interest payments start immediately",
         "Personal guarantees may be required",
+      ],
+    },
+    raboInnovatieLeningApproved: {
+      trigger: "activity",
+      activity: "raboInnovatielening",
+      title: "🏦 Rabo Innovatielening Approved!",
+      message: "Rabobank has approved your innovation loan! You have access to €25k-€200k at 10% interest. The first 2 years are interest-only with no repayment required - this gives you breathing room to develop your technology.",
+      severity: "success",
+      consequences: [
+        "No collateral required",
+        "First 2 years: interest-only payments",
+        "Subordinated loan (doesn't scare off investors)",
+        "No equity dilution",
+        "Must focus on innovation/sustainability/digitalization",
       ],
     },
 
@@ -1119,7 +1133,7 @@ lowRunwayWarning: {
       title: "Bank & Loans",
       description: "Debt financing - no equity loss but must be repaid.",
       expert: "bank",
-      activities: ["bankMeeting", "loanApplication"],
+      activities: ["bankMeeting", "loanApplication", "raboInnovatielening"],
     },
     {
       id: "team",
@@ -1337,7 +1351,7 @@ lowRunwayWarning: {
       stickerCost: 1,
       category: "banking",
       description: "Discuss financing options with the bank. They want to see your business plan.",
-      unlocks: ["loanApplication"],
+      unlocks: ["loanApplication", "raboInnovatielening"],
       requiresContract: "loanApplication",
       expert: "bank",
       triggersEvent: "bankMeetingEvent",
@@ -1353,6 +1367,45 @@ lowRunwayWarning: {
       requiresContract: "loanAgreement",
       expert: "bank",
       triggersEvent: "loanApproved",
+    },
+    raboInnovatielening: {
+      name: "Rabo Innovatielening",
+      costTime: 80,
+      costMoney: 1000,
+      stickerCost: 2,
+      category: "banking",
+      description: "Innovation loan from Rabobank (€25k-€200k at 10% interest). No collateral required.",
+      requiresActivity: "bankMeeting",
+      requiresContract: "loanAgreement",
+      expert: "bank",
+      partner: "rabobank",
+      triggersEvent: "raboInnovatieLeningApproved",
+      loanDetails: {
+        minAmount: 25000,
+        maxAmount: 200000,
+        interestRate: 10,
+        duration: 7,
+        gracePeriod: 2,
+        requiresCollateral: false,
+        requiresPitch: true,
+      },
+      requirements: {
+        legalForm: ['bv', 'holding'],
+        minFounders: 2,
+        employmentStatus: ['parttime', 'fulltime'],
+      },
+      benefits: [
+        'No collateral required',
+        'First 2 years no repayment',
+        'Designed for pre-revenue startups',
+        'Subordinated loan (investor-friendly)'
+      ],
+      restrictions: [
+        'Must be a BV (not sole proprietor)',
+        'Need at least 2 founders',
+        'Must have left university (at least part-time)',
+        'Focus on innovation/sustainability/digitalization'
+      ]
     },
 
     // === TEAM & HIRING ===

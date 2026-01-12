@@ -78,7 +78,7 @@ export const STARTUP_CONFIG = {
       id: "ip",
       title: "Intellectual Property",
       description: "Protect your innovations. Requires patent expert meeting first.",
-      activities: ["patentDIY", "patentOutsourced"],
+      activities: ["knowHowProtection", "patentOutsourced"],
     },
   ],
 
@@ -139,7 +139,7 @@ export const STARTUP_CONFIG = {
       costMoney: 0,
       category: "experts",
       description: "Get advice on protecting your intellectual property.",
-      unlocks: ["patentDIY", "patentOutsourced"],
+      unlocks: ["knowHowProtection", "patentOutsourced"],
     },
     subsidyAdvisor: {
       name: "Subsidy Advisor",
@@ -211,19 +211,20 @@ export const STARTUP_CONFIG = {
     },
 
     // === INTELLECTUAL PROPERTY ===
-    patentDIY: {
-      name: "Patent Filing (DIY)",
-      costTime: 150,
-      costMoney: 2000,
+    knowHowProtection: {
+      name: "Know-How Protection",
+      costTime: 40,
+      costMoney: 2500,
       category: "ip",
-      description: "File a patent yourself. Cheaper but risky.",
+      description: "Trade secrets, NDAs, and documentation. Quick and cheaper than patent.",
       salesGradeBonus: 1,
       requiresActivity: "patentConsult",
+      canUpgradeToPatent: true,
     },
     patentOutsourced: {
       name: "Patent Filing (Professional)",
       costTime: 10,
-      costMoney: 15000,
+      costMoney: 10000,
       category: "ip",
       description: "Hire a patent attorney for proper protection.",
       salesGradeBonus: 2,

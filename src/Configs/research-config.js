@@ -155,7 +155,7 @@ academicOnlyGrants: ['grantTakeoff'], // NWO Take-off requires university
       icon: "⚖️",
       description: "Patent filing, freedom to operate analysis",
       keyTension: "Costs money, takes time, but protects tech",
-      activities: ["patentSearch", "patentFiling", "patentDIY"],
+      activities: ["patentSearch", "patentFiling", "knowHowProtection"],
       contracts: [
         { id: "patentStrategy", name: "Patent Strategy Form", description: "Filing strategy and claims outline" },
         { id: "ftoReport", name: "FTO Report", description: "Freedom to operate analysis results" },
@@ -791,7 +791,15 @@ lowRunwayWarning: {
             name: '🛡️ IP Fortress',
             points: 2,
             condition: 'hasPatent',
-            description: 'Protected your intellectual property',
+            description: 'Filed a patent application',
+            type: 'positive',
+          },
+          {
+            id: 'secretKeeper',
+            name: '🤫 Secret Keeper',
+            points: 1,
+            condition: 'hasKnowHow',
+            description: 'Protected IP with know-how',
             type: 'positive',
           },
           {
@@ -845,7 +853,7 @@ lowRunwayWarning: {
             name: '📋 Patent? What Patent?',
             points: -2,
             condition: 'noIPProtection',
-            description: 'No patent filed after 4 rounds',
+            description: 'No IP protection at all after 4 rounds',
             type: 'negative',
             roast: "Hope your competitors send a thank-you card.",
           },
@@ -968,7 +976,12 @@ lowRunwayWarning: {
       goodLicence: (data) => data.licenceAgreement === 'balanced',
       neverNegative: (data) => !data.wentNegative,
       manyInterviews: (data) => (data.interviewCount || 0) >= 6,
-      hasPatent: (data) => data.completedActivities?.some(a => ['patentFiling', 'patentDIY'].includes(a)),
+      hasPatent: (data) => data.completedActivities?.some(a => ['patentFiling'].includes(a)),
+      hasKnowHow: (data) => {
+        const hasKnowHowOnly = data.completedActivities?.includes('knowHowProtection');
+        const hasPatent = data.completedActivities?.some(a => ['patentFiling'].includes(a));
+        return hasKnowHowOnly && !hasPatent; // Only award if they have know-how but NOT patent
+      },
       leftUniversityEarly: (data) => data.leftUniversityRound && data.leftUniversityRound <= 2,
 
       // Negative conditions
@@ -976,7 +989,7 @@ lowRunwayWarning: {
       neverLeftUniversity: (data) => data.employmentStatus === 'university',
       noCustomerValidation: (data) => (data.validationCount || 0) === 0,
       tooMuchDilution: (data) => (data.investorEquity || 0) > 50,
-      noIPProtection: (data) => !data.completedActivities?.some(a => ['patentFiling', 'patentDIY'].includes(a)),
+      noIPProtection: (data) => !data.completedActivities?.some(a => ['patentFiling', 'knowHowProtection'].includes(a)),
       noTTOMeeting: (data) => !data.completedActivities?.includes('ttoDiscussion'),
       badLicence: (data) => data.licenceAgreement === 'revenueHeavy',
       allTechnicalTeam: (data) => {
@@ -1092,7 +1105,7 @@ lowRunwayWarning: {
       title: "Intellectual Property",
       description: "Protect your innovations. Meet TTO first.",
       expert: "patent",
-      activities: ["patentSearch", "patentFiling", "patentDIY"],
+      activities: ["patentSearch", "patentFiling", "knowHowProtection"],
     },
     {
       id: "funding",
@@ -1174,7 +1187,7 @@ lowRunwayWarning: {
       stickerCost: 1,
       category: "tto",
       description: "Required first step. Discuss IP ownership with Tech Transfer Office.",
-      unlocks: ["ttoNegotiation", "licenceNegotiation", "patentSearch", "patentFiling", "patentDIY", "legalForm"],
+      unlocks: ["ttoNegotiation", "licenceNegotiation", "patentSearch", "patentFiling", "knowHowProtection", "legalForm"],
       requiresContract: "ttoMeeting",
       expert: "tto",
       triggersEvent: "ttoFirstMeeting",
@@ -1245,16 +1258,19 @@ lowRunwayWarning: {
       expert: "patent",
       triggersEvent: "patentFiled",
     },
-    patentDIY: {
-      name: "Patent: DIY Filing",
-      costTime: 150,
-      costMoney: 2000,
-      stickerCost: 2,
+    knowHowProtection: {
+      name: "Know-How Protection",
+      costTime: 40,
+      costMoney: 2500,
+      stickerCost: 1,
       category: "ip",
-      description: "Cheaper but risky. May have weak claims that don't hold up.",
+      description: "Trade secrets, NDAs, and documentation. Quick and cheaper than patent.",
       investorAppealBonus: 1,
+      trlBonus: 1,
       requiresActivity: "ttoDiscussion",
       expert: "patent",
+      canUpgradeToPatent: true,
+      risks: ["Can be reverse-engineered", "No legal exclusivity"],
     },
 
     // === FUNDING & GRANTS ===

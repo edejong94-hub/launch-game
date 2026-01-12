@@ -114,8 +114,8 @@ const EndGameScoreBreakdown = ({ teamData, progress, config }) => {
     cash: progress?.cash || 0,
     revenue: teamData?.funding?.revenue || 0,
     trl: progress?.currentTRL || teamData?.trl || 3,
-    patents: teamData?.completedActivities?.filter(a => 
-      ['patentFiling', 'patentDIY'].includes(a)
+    patents: teamData?.completedActivities?.filter(a =>
+      ['patentFiling', 'knowHowProtection'].includes(a)
     ).length || 0,
     validations: progress?.validationsTotal || 0,
     interviews: progress?.interviewsTotal || 0,

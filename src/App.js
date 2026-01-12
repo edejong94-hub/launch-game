@@ -491,7 +491,7 @@ const calculateProgress = (teamData, config) => {
 };
 
 // Check if an activity is unlocked based on prerequisites
-const isActivityUnlocked = (activityKey, activity, teamData, config) => {
+const isActivityUnlocked = (activityKey, activity, teamData, config, currentRoundActivities = {}) => {
   // Special handling for pivot
   if (activityKey === 'pivot') {
     const minInterviews = activity.requires?.minInterviews || 2;
@@ -544,7 +544,10 @@ const isActivityUnlocked = (activityKey, activity, teamData, config) => {
 
     const hasRequired = requiredActivities.some(
       (req) =>
-        teamData.completedActivities?.includes(req) || teamData.activities?.[req]
+        // Check if completed in previous rounds
+        teamData.completedActivities?.includes(req) ||
+        // Check if completed/selected in current round
+        currentRoundActivities?.[req]
     );
 
     if (!hasRequired) {
@@ -554,14 +557,24 @@ const isActivityUnlocked = (activityKey, activity, teamData, config) => {
           `Requires: ${
             config.activities[requiredActivities[0]]?.name || requiredActivities[0]
           }`,
+        justUnlocked: false,
       };
     }
+
+    // Check if this was JUST unlocked in the current round
+    const justUnlocked = requiredActivities.some(
+      (req) =>
+        currentRoundActivities?.[req] &&
+        !teamData.completedActivities?.includes(req)
+    );
+
+    return { unlocked: true, justUnlocked };
   }
 
   if (activity.requiresInterviews) {
     const totalInterviews =
       (teamData.interviewCount || 0) +
-      (teamData.activities?.customerInterviews ? 1 : 0);
+      (currentRoundActivities?.customerInterviews ? 1 : 0);
     if (totalInterviews < activity.requiresInterviews) {
       return {
         unlocked: false,
@@ -577,15 +590,15 @@ const isActivityUnlocked = (activityKey, activity, teamData, config) => {
     };
   }
 
-  return { unlocked: true };
+  return { unlocked: true, justUnlocked: false };
 };
 
 // Check if office is available
-const isOfficeAvailable = (officeKey, officeOption, teamData) => {
+const isOfficeAvailable = (officeKey, officeOption, teamData, currentRoundActivities = {}) => {
   if (officeOption.requiresActivity) {
     const hasRequired =
       teamData.completedActivities?.includes(officeOption.requiresActivity) ||
-      teamData.activities?.[officeOption.requiresActivity];
+      currentRoundActivities?.[officeOption.requiresActivity];
     if (!hasRequired) {
       return {
         available: false,
@@ -1279,9 +1292,11 @@ const GroupedActivities = ({
                   key,
                   activity,
                   teamData,
-                  config
+                  config,
+                  activities  // Pass current round activities
                 );
                 const isLocked = !unlockStatus.unlocked;
+                const justUnlocked = unlockStatus.justUnlocked || false;
                 const isCompletedOneTime = activity.oneTimeOnly && (teamData.completedActivities?.includes(key) || false);
                 const cannotUncheck = activity.oneTimeOnly && checked;
                 const isPivot = key === 'pivot';
@@ -1294,10 +1309,15 @@ const GroupedActivities = ({
                       (checked && !isLocked ? " checked" : "") +
                       (isLocked ? " opacity-60" : "") +
                       (isCompletedOneTime ? " opacity-75" : "") +
-                      (isPivot ? " pivot-activity" : "")
+                      (isPivot ? " pivot-activity" : "") +
+                      (justUnlocked ? " just-unlocked" : "")
                     }
                     style={{
                       cursor: isLocked || cannotUncheck ? "not-allowed" : "pointer",
+                      ...(justUnlocked && {
+                        borderColor: "rgba(52, 211, 153, 0.5)",
+                        boxShadow: "0 0 20px rgba(52, 211, 153, 0.2)",
+                      })
                     }}
                   >
                     <input
@@ -1321,6 +1341,8 @@ const GroupedActivities = ({
                       >
                         {isLocked ? (
                           <Lock size={14} />
+                        ) : justUnlocked ? (
+                          <span style={{ fontSize: '14px' }}>✨</span>
                         ) : (
                           <Unlock size={14} style={{ opacity: 0.3 }} />
                         )}
@@ -1360,6 +1382,21 @@ const GroupedActivities = ({
                         >
                           {activity.description}
                         </p>
+                      )}
+                      {justUnlocked && !isLocked && (
+                        <div
+                          style={{
+                            background: "rgba(52, 211, 153, 0.15)",
+                            color: "#34d399",
+                            padding: "0.25rem 0.5rem",
+                            borderRadius: "4px",
+                            fontSize: "0.75rem",
+                            marginTop: "0.5rem",
+                            fontWeight: 600
+                          }}
+                        >
+                          ✨ Just unlocked this round!
+                        </div>
                       )}
                       {isLocked && (
                         <p
@@ -1433,6 +1470,7 @@ const EmploymentStatusSelector = ({
   currentStatus,
   onStatusChange,
   completedActivities = [],
+  currentRoundActivities = {},
   currentRound,
   founders,
   cash,
@@ -1442,7 +1480,8 @@ const EmploymentStatusSelector = ({
 
   const canSelectStatus = (status) => {
     if (!status.requiresActivity) return true;
-    return completedActivities.includes(status.requiresActivity);
+    return completedActivities.includes(status.requiresActivity) ||
+           currentRoundActivities[status.requiresActivity];
   };
 
   const canAffordStatus = (status) => {
@@ -2954,6 +2993,7 @@ return () => {};
           currentStatus={employmentStatus}
           onStatusChange={setEmploymentStatus}
           completedActivities={teamData.completedActivities || []}
+          currentRoundActivities={activities}
           currentRound={currentRound}
           founders={founders}
           cash={progress.cash}
@@ -2973,7 +3013,8 @@ return () => {};
               const availability = isOfficeAvailable(
                 key,
                 officeOption,
-                teamData
+                teamData,
+                activities  // Pass current round activities
               );
               const isLocked = !availability.available;
 

@@ -86,14 +86,14 @@ export const STARTUP_CONFIG = {
     // === DISCOVERY & VALIDATION ===
     customerInterviews: {
       name: "Customer Interviews",
-      costTime: 40,
+      costTime: 32,
       costMoney: 0,
       category: "discovery",
       description: "Talk to potential customers to understand their problems.",
     },
     customerValidation: {
       name: "Customer Validation",
-      costTime: 60,
+      costTime: 48,
       costMoney: 0,
       category: "discovery",
       description: "Get commitment from customers (LOI, pre-order, pilot).",
@@ -101,17 +101,17 @@ export const STARTUP_CONFIG = {
     },
     pivot: {
       name: "Pivot Product",
-      costTime: 40,
+      costTime: 32,
       costMoney: 0,
       category: "discovery",
       description: "Change direction based on customer feedback.",
-      extraTimePerRound: 40,
+      extraTimePerRound: 32,
     },
 
     // === EXPERT MEETINGS ===
     kvkConsult: {
       name: "KVK: Legal Form Consultation",
-      costTime: 60,
+      costTime: 48,
       costMoney: 0,
       category: "experts",
       description: "Meet the KVK expert to choose your legal structure.",
@@ -119,7 +119,7 @@ export const STARTUP_CONFIG = {
     },
     investorMeeting: {
       name: "Investor Meeting",
-      costTime: 40,
+      costTime: 32,
       costMoney: 0,
       category: "experts",
       description: "Pitch to investors and discuss funding terms.",
@@ -127,7 +127,7 @@ export const STARTUP_CONFIG = {
     },
     bankMeeting: {
       name: "Bank Meeting",
-      costTime: 40,
+      costTime: 32,
       costMoney: 0,
       category: "experts",
       description: "Discuss loans and credit facilities with the bank.",
@@ -135,7 +135,7 @@ export const STARTUP_CONFIG = {
     },
     patentConsult: {
       name: "Patent Expert Consultation",
-      costTime: 40,
+      costTime: 32,
       costMoney: 0,
       category: "experts",
       description: "Get advice on protecting your intellectual property.",
@@ -143,7 +143,7 @@ export const STARTUP_CONFIG = {
     },
     subsidyAdvisor: {
       name: "Subsidy Advisor",
-      costTime: 40,
+      costTime: 32,
       costMoney: 0,
       category: "experts",
       description: "Learn about available grants and subsidies.",
@@ -151,7 +151,7 @@ export const STARTUP_CONFIG = {
     },
     incubatorMeeting: {
       name: "Incubator Meeting",
-      costTime: 40,
+      costTime: 32,
       costMoney: 0,
       category: "experts",
       description: "Discuss joining an incubator program and getting office space.",
@@ -159,7 +159,7 @@ export const STARTUP_CONFIG = {
     },
     networking: {
       name: "Networking Event",
-      costTime: 60,
+      costTime: 48,
       costMoney: 0,
       category: "experts",
       description: "Build connections and find potential partners or advisors.",
@@ -170,7 +170,7 @@ export const STARTUP_CONFIG = {
     // === MARKET & SALES ===
     marketing: {
       name: "Marketing & Awareness",
-      costTime: 60,
+      costTime: 48,
       costMoney: 2000,
       category: "market",
       description: "Run campaigns to build brand awareness and generate leads.",
@@ -178,14 +178,14 @@ export const STARTUP_CONFIG = {
     },
     marketAnalysisDIY: {
       name: "Market Analysis (DIY)",
-      costTime: 200,
+      costTime: 160,
       costMoney: 0,
       category: "market",
       description: "Research your market yourself. Takes time but saves money.",
     },
     marketAnalysisOutsourced: {
       name: "Market Analysis (Outsourced)",
-      costTime: 10,
+      costTime: 8,
       costMoney: 10000,
       category: "market",
       description: "Hire experts to analyze your market quickly.",
@@ -194,7 +194,7 @@ export const STARTUP_CONFIG = {
     // === OPERATIONS & BUILDING ===
     productDevelopment: {
       name: "Product Development",
-      costTime: 100,
+      costTime: 80,
       costMoney: 0,
       category: "operations",
       description: "Focus time on building and improving your product.",
@@ -202,7 +202,7 @@ export const STARTUP_CONFIG = {
     },
     hireSenior: {
       name: "Hire Senior Advisor",
-      costTime: 40,
+      costTime: 32,
       costMoney: 0,
       category: "operations",
       description: "Bring experienced talent onto your team.",
@@ -213,7 +213,7 @@ export const STARTUP_CONFIG = {
     // === INTELLECTUAL PROPERTY ===
     knowHowProtection: {
       name: "Know-How Protection",
-      costTime: 40,
+      costTime: 32,
       costMoney: 2500,
       category: "ip",
       description: "Trade secrets, NDAs, and documentation. Quick and cheaper than patent.",
@@ -223,7 +223,7 @@ export const STARTUP_CONFIG = {
     },
     patentOutsourced: {
       name: "Patent Filing (Professional)",
-      costTime: 10,
+      costTime: 8,
       costMoney: 10000,
       category: "ip",
       description: "Hire a patent attorney for proper protection.",

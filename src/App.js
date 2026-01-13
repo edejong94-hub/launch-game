@@ -601,13 +601,22 @@ const isActivityUnlocked = (activityKey, activity, teamData, config, currentRoun
   }
 
   if (activity.requiresInterviews) {
-    const totalInterviews =
-      (teamData.interviewCount || 0) +
-      (currentRoundActivities?.customerInterviews ? 1 : 0);
+    const previousInterviews = teamData.interviewCount || 0;
+
+    // Calculate interviews in current round
+    // customerInterviews activity counts as 1 + (number of juniors * 0.5)
+    let currentRoundInterviews = 0;
+    if (currentRoundActivities?.customerInterviews) {
+      const juniorsOnTeam = teamData.employees || 0;
+      currentRoundInterviews = 1 + juniorsOnTeam * 0.5;
+    }
+
+    const totalInterviews = previousInterviews + currentRoundInterviews;
+
     if (totalInterviews < activity.requiresInterviews) {
       return {
         unlocked: false,
-        reason: `Requires ${activity.requiresInterviews} customer interviews first`,
+        reason: `Requires ${activity.requiresInterviews} customer interviews (you have ${Math.floor(totalInterviews)})`,
       };
     }
   }

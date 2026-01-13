@@ -693,10 +693,10 @@ const employmentStatusConfig = {
     id: 'university',
     name: 'University Employee',
     icon: '🏛️',
-    hoursPerFounder: 400,
+    hoursPerFounder: 200,
     salaryPerFounder: 0,
     features: ['Lab access (cheaper R&D)', 'NWO grants eligible', 'Job security'],
-    drawbacks: ['Only 400 hrs/founder', 'Teaching duties', 'TTO oversight'],
+    drawbacks: ['Only 200 hrs/founder', 'Teaching duties', 'TTO oversight'],
   },
   parttime: {
     id: 'parttime',

@@ -2252,19 +2252,9 @@ return () => {};
       gameMode: config.gameMode,
       round: currentRound,
       submittedAt: serverTimestamp(),
-      progress: calculateProgress(
-        {
-          ...newTeamData,
-          office,
-          activities,
-          founders,
-          round: currentRound,
-          legalForm,
-          juniorHiresThisRound: juniorHires,
-          funding,
-        },
-        config
-      ),
+      // Use already-calculated progress directly - do NOT recalculate!
+      // newTeamData.cash already includes funding, so recalculating would double-count it
+      progress,
     };
 
     console.log("🔥 Attempting to save round data to Firestore:", {

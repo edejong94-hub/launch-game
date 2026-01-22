@@ -14,6 +14,7 @@ root.render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />} />
+          <Route path="/live" element={<LiveDashboard />} />
           <Route path="/dashboard" element={<LiveDashboard />} />
         </Routes>
       </BrowserRouter>

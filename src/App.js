@@ -1,6 +1,5 @@
 import GameEventPopup, { checkEventTrigger } from './Components/Gameeventpopup';
 import EndGameScoreBreakdown from './Components/EndGameScoreBreakdown';
-import ResourceTracker from './Components/ResourceTracker';
 import PivotReasonSelector from './Components/PivotReasonSelector';
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -3320,14 +3319,6 @@ return () => {};
         />
       </div>
 
-      {/* Resource Tracker (Research mode only) */}
-      {isResearchMode && (
-        <ResourceTracker
-          employmentStatus={employmentStatus}
-          founderCount={founders}
-          hoursUsed={progress.totalTimeSpent}
-        />
-      )}
 
       {/* Employment Status (Research mode only) */}
       {isResearchMode && (

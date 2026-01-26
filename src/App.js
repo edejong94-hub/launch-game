@@ -1715,7 +1715,6 @@ const EmploymentStatusSelector = ({
   currentRound,
   founders,
   cash,
-  hoursUsed,
 }) => {
   const statuses = Object.values(employmentStatusConfig);
 
@@ -1729,10 +1728,6 @@ const EmploymentStatusSelector = ({
     const cost = status.salaryPerFounder * founders;
     return cash >= cost || status.salaryPerFounder === 0;
   };
-
-  const maxHours = getAvailableHours(currentStatus, founders);
-  const isOverHours = hoursUsed > maxHours;
-  const percentage = Math.min(100, (hoursUsed / maxHours) * 100);
 
   return (
     <SectionCard
@@ -3306,7 +3301,6 @@ return () => {};
           currentRound={currentRound}
           founders={founders}
           cash={progress.cash}
-          hoursUsed={progress.totalTimeSpent}
         />
       )}
 

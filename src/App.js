@@ -416,7 +416,9 @@ const calculateProgress = (teamData, config) => {
       ? config.companyOffice[teamData.office].productivity
       : 1.0;
 
-  const baseHours = (teamData.founders || (isResearchMode ? 2 : 4)) * 500;
+  // Get hours per founder based on employment status
+  const hoursPerFounder = employmentStatusConfig[teamData.employmentStatus || 'university']?.hoursPerFounder || 200;
+  const baseHours = (teamData.founders || (isResearchMode ? 2 : 4)) * hoursPerFounder;
   const availableHours = baseHours * productivityMultiplier;
   const developmentHours = availableHours - totalTimeSpent;
 
@@ -651,12 +653,8 @@ const isOfficeAvailable = (officeKey, officeOption, teamData, currentRoundActivi
 // EMPLOYMENT STATUS HELPERS (University Dilemma)
 // ============================================
 const getAvailableHours = (status, founderCount) => {
-  const baseHours = {
-    university: 500,
-    parttime: 750,
-    fulltime: 1000,
-  }[status] || 500;
-  return baseHours * founderCount;
+  const hoursPerFounder = employmentStatusConfig[status]?.hoursPerFounder || 200;
+  return hoursPerFounder * founderCount;
 };
 
 const getFounderSalaryCost = (status, founderCount) => {
@@ -1738,60 +1736,10 @@ const EmploymentStatusSelector = ({
 
   return (
     <SectionCard
-      title="University Employment Status"
+      title="Employment Status"
       description="Your employment status affects available time, costs, and opportunities."
       icon={<Briefcase size={20} />}
     >
-      {/* Hours Meter */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-        borderRadius: '10px',
-        padding: '1rem',
-        marginBottom: '1rem',
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '0.5rem',
-          fontSize: '0.875rem',
-          color: '#94a3b8',
-        }}>
-          <span>⏱️ Hours Used This Round</span>
-          <span style={{ color: isOverHours ? '#ef4444' : '#e2e8f0', fontWeight: isOverHours ? 700 : 400 }}>
-            {hoursUsed} / {maxHours} hours
-          </span>
-        </div>
-        <div style={{
-          height: '10px',
-          background: 'rgba(99, 102, 241, 0.2)',
-          borderRadius: '5px',
-          overflow: 'hidden',
-        }}>
-          <div style={{
-            height: '100%',
-            width: `${Math.min(100, percentage)}%`,
-            background: isOverHours ? 'linear-gradient(90deg, #ef4444, #dc2626)' :
-                       percentage > 80 ? 'linear-gradient(90deg, #f59e0b, #eab308)' :
-                       'linear-gradient(90deg, #6366f1, #8b5cf6)',
-            borderRadius: '5px',
-            transition: 'width 0.3s ease',
-          }} />
-        </div>
-        {isOverHours && (
-          <p style={{
-            margin: '0.75rem 0 0 0',
-            padding: '0.75rem',
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '8px',
-            color: '#f87171',
-            fontSize: '0.8125rem',
-          }}>
-            ⚠️ You're exceeding available hours! Consider changing employment status or removing activities.
-          </p>
-        )}
-      </div>
-
       {/* Status Options */}
       <div style={{
         display: 'grid',
@@ -3264,9 +3212,10 @@ return () => {};
         <StatTile
           label="Time This Round"
           value={`${progress.totalTimeSpent} h`}
-          sub="From activities"
+          sub={`of ${progress.maxHoursAvailable}h available`}
           tone={
-            progress.totalTimeSpent > founders * 500 ? "warning" : "default"
+            progress.totalTimeSpent > progress.maxHoursAvailable ? "danger" :
+            progress.totalTimeSpent > progress.maxHoursAvailable * 0.8 ? "warning" : "default"
           }
         />
         {isResearchMode && (
@@ -3288,6 +3237,64 @@ return () => {};
         />
       </div>
 
+      {/* Sticky Hours Bar */}
+      {isResearchMode && (
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+          borderRadius: '10px',
+          padding: '0.75rem 1rem',
+          marginBottom: '1rem',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          border: '1px solid #334155',
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '0.5rem',
+          }}>
+            <span style={{ fontSize: '0.875rem', color: '#94a3b8', fontWeight: 600 }}>
+              ⏱️ Hours This Round
+            </span>
+            <span style={{
+              color: progress.hoursOverLimit ? '#ef4444' : '#c1fe00',
+              fontWeight: 700,
+              fontSize: '1rem',
+            }}>
+              {progress.totalTimeSpent} / {progress.maxHoursAvailable}h
+            </span>
+          </div>
+          <div style={{
+            height: '8px',
+            background: 'rgba(99, 102, 241, 0.2)',
+            borderRadius: '4px',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${Math.min(100, (progress.totalTimeSpent / progress.maxHoursAvailable) * 100)}%`,
+              background: progress.hoursOverLimit ? 'linear-gradient(90deg, #ef4444, #dc2626)' :
+                         (progress.totalTimeSpent / progress.maxHoursAvailable) > 0.8 ? 'linear-gradient(90deg, #f59e0b, #eab308)' :
+                         'linear-gradient(90deg, #c1fe00, #a3e635)',
+              borderRadius: '4px',
+              transition: 'width 0.3s ease',
+            }} />
+          </div>
+          {progress.hoursOverLimit && (
+            <p style={{
+              margin: '0.5rem 0 0 0',
+              color: '#f87171',
+              fontSize: '0.75rem',
+              fontWeight: 500,
+            }}>
+              ⚠️ Over budget! Remove activities or change employment status.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Employment Status (Research mode only) */}
       {isResearchMode && (

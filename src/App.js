@@ -7,12 +7,9 @@ import {
   CheckCircle,
   AlertCircle,
   Users,
-  Beaker,
   Target,
   Briefcase,
-  PieChart,
   Lock,
-  Unlock,
 } from "lucide-react";
 import { db } from "./firebase";
 import foundedLogo from "./logo.svg";
@@ -1243,9 +1240,76 @@ const TeamDiversityEvent = ({
 };
 
 // ============================================
-// GROUPED ACTIVITIES COMPONENT
+// EXPERT ACTIVITY SELECTOR COMPONENT
+// Groups activities by expert type with accordion behavior
 // ============================================
-const GroupedActivities = ({
+const EXPERT_CATEGORIES = [
+  {
+    id: 'team',
+    name: 'Team Only',
+    icon: '🎯',
+    description: 'Internal work - no expert meeting needed',
+    activities: ['prototypeDevelopment', 'cofounderAgreement', 'hireBusinessPerson', 'hireMarketExpert', 'hireOperations', 'networking', 'pivot'],
+  },
+  {
+    id: 'tto',
+    name: 'TTO Officer',
+    icon: '🏛️',
+    description: 'Technology Transfer Office meetings',
+    activities: ['ttoDiscussion', 'ttoNegotiation', 'licenceNegotiation', 'labNegotiation', 'universityExit'],
+  },
+  {
+    id: 'customer',
+    name: 'Customer',
+    icon: '👤',
+    description: 'Customer discovery and validation',
+    activities: ['customerInterviews', 'customerValidation'],
+  },
+  {
+    id: 'patent',
+    name: 'Patent Attorney',
+    icon: '⚖️',
+    description: 'Intellectual property protection',
+    activities: ['patentSearch', 'patentFiling', 'knowHowProtection'],
+  },
+  {
+    id: 'investor',
+    name: 'Investor / VC',
+    icon: '💰',
+    description: 'Equity funding discussions',
+    activities: ['investorMeeting', 'investorNegotiation'],
+  },
+  {
+    id: 'grant',
+    name: 'Grant Advisor',
+    icon: '📋',
+    description: 'Non-dilutive funding options',
+    activities: ['grantTakeoff', 'grantWBSO', 'grantRegional'],
+  },
+  {
+    id: 'bank',
+    name: 'Bank',
+    icon: '🏦',
+    description: 'Loans and credit facilities',
+    activities: ['bankMeeting', 'loanApplication', 'raboInnovatielening'],
+  },
+  {
+    id: 'industry',
+    name: 'Industry Partner',
+    icon: '🏭',
+    description: 'Corporate partnerships and pilots',
+    activities: ['industryExploration', 'pilotProject'],
+  },
+  {
+    id: 'incubator',
+    name: 'Incubator',
+    icon: '🏢',
+    description: 'Startup programs and office space',
+    activities: ['incubatorApplication'],
+  },
+];
+
+const ExpertActivitySelector = ({
   config,
   activities,
   onToggle,
@@ -1253,213 +1317,323 @@ const GroupedActivities = ({
   juniorHires,
   onJuniorHiresChange,
 }) => {
-  const sections = config.activitySections || [];
+  const [expandedCategory, setExpandedCategory] = useState(null);
 
-  const getSectionIcon = (sectionId) => {
-    const icons = {
-      discovery: <Target size={18} />,
-      experts: <Users size={18} />,
-      market: <PieChart size={18} />,
-      operations: <Briefcase size={18} />,
-      ip: <Lock size={18} />,
-      tto: <Briefcase size={18} />,
-      funding: <PieChart size={18} />,
-      team: <Users size={18} />,
-      development: <Beaker size={18} />,
-      strategy: <Target size={18} />,
-    };
-    return icons[sectionId] || null;
+  const toggleCategory = (categoryId) => {
+    setExpandedCategory(prev => prev === categoryId ? null : categoryId);
+  };
+
+  // Count selected activities per category
+  const getSelectionCount = (category) => {
+    return category.activities.filter(key => activities[key]).length;
+  };
+
+  // Check if category has any available (unlocked) activities
+  const hasAvailableActivities = (category) => {
+    return category.activities.some(key => {
+      const activity = config.activities[key];
+      if (!activity) return false;
+      const unlockStatus = isActivityUnlocked(key, activity, teamData, config, activities);
+      return unlockStatus.unlocked;
+    });
+  };
+
+  const renderActivity = (activityKey) => {
+    const activity = config.activities[activityKey];
+    if (!activity) return null;
+
+    const checked = activities[activityKey] || false;
+    const unlockStatus = isActivityUnlocked(activityKey, activity, teamData, config, activities);
+    const isLocked = !unlockStatus.unlocked;
+    const justUnlocked = unlockStatus.justUnlocked || false;
+    const isCompletedOneTime = activity.oneTimeOnly && (teamData.completedActivities?.includes(activityKey) || false);
+    const cannotUncheck = activity.oneTimeOnly && checked;
+    const isPivot = activityKey === 'pivot';
+
+    return (
+      <label
+        key={activityKey}
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.75rem',
+          padding: '0.875rem 1rem',
+          background: checked && !isLocked
+            ? 'linear-gradient(145deg, rgba(193, 254, 0, 0.15), rgba(193, 254, 0, 0.05))'
+            : 'linear-gradient(145deg, #0a0a0a, #0f0f0f)',
+          borderRadius: '10px',
+          border: checked && !isLocked
+            ? '1px solid rgba(193, 254, 0, 0.4)'
+            : '1px solid #1f1f1f',
+          cursor: isLocked || cannotUncheck ? 'not-allowed' : 'pointer',
+          opacity: isLocked ? 0.5 : 1,
+          transition: 'all 0.2s ease',
+          ...(justUnlocked && {
+            borderColor: 'rgba(52, 211, 153, 0.5)',
+            boxShadow: '0 0 15px rgba(52, 211, 153, 0.15)',
+          }),
+          ...(isPivot && {
+            borderColor: checked ? '#f59e0b' : '#44403c',
+            background: checked
+              ? 'linear-gradient(145deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05))'
+              : 'linear-gradient(145deg, #0a0a0a, #0f0f0f)',
+          }),
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={checked && !isLocked}
+          disabled={isLocked || cannotUncheck}
+          onChange={() => {
+            if (!isLocked && !cannotUncheck) {
+              onToggle(activityKey);
+            }
+          }}
+          style={{
+            width: '18px',
+            height: '18px',
+            marginTop: '2px',
+            accentColor: '#c1fe00',
+            cursor: isLocked || cannotUncheck ? 'not-allowed' : 'pointer',
+          }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {isLocked && <Lock size={12} style={{ color: '#737373' }} />}
+            {justUnlocked && <span style={{ fontSize: '12px' }}>✨</span>}
+            <span style={{
+              fontWeight: 600,
+              color: isLocked ? '#737373' : '#e5e5e5',
+              fontSize: '0.9rem',
+            }}>
+              {activity.name}
+            </span>
+          </div>
+          <div style={{
+            display: 'flex',
+            gap: '0.75rem',
+            marginTop: '0.375rem',
+            fontSize: '0.8rem',
+            color: '#a3a3a3',
+          }}>
+            <span>{activity.costTime}h</span>
+            <span style={{ color: '#22c55e', fontWeight: 600 }}>€{activity.costMoney.toLocaleString()}</span>
+          </div>
+          {activity.description && (
+            <p style={{
+              margin: '0.375rem 0 0 0',
+              fontSize: '0.75rem',
+              color: '#737373',
+              lineHeight: 1.4,
+            }}>
+              {activity.description}
+            </p>
+          )}
+          {isLocked && unlockStatus.reason && (
+            <p style={{
+              margin: '0.375rem 0 0 0',
+              fontSize: '0.75rem',
+              color: '#ef4444',
+            }}>
+              🔒 {unlockStatus.reason}
+            </p>
+          )}
+          {justUnlocked && !isLocked && (
+            <p style={{
+              margin: '0.375rem 0 0 0',
+              fontSize: '0.75rem',
+              color: '#34d399',
+              fontWeight: 600,
+            }}>
+              ✨ Just unlocked!
+            </p>
+          )}
+          {isCompletedOneTime && (
+            <p style={{
+              margin: '0.375rem 0 0 0',
+              fontSize: '0.75rem',
+              color: '#22c55e',
+              fontWeight: 600,
+            }}>
+              ✓ Completed
+            </p>
+          )}
+        </div>
+      </label>
+    );
   };
 
   return (
-    <div style={{ display: "grid", gap: "1.5rem" }}>
-      <SectionCard
-        title="Hiring"
-        description="Grow your team. New hires cost time to onboard and add to payroll."
-        icon={<Users size={20} />}
-      >
-        <div className="activity-card" style={{ marginBottom: 0 }}>
-          <div className="activity-content">
-            <p className="activity-name">Hire Team Members</p>
-            <div className="activity-cost">
-              <span>40 h per hire</span>
-              <span>+ ongoing salary</span>
-            </div>
-            <p className="activity-requirement">
-              New hires will be on your payroll from next round.
+    <div style={{ display: 'grid', gap: '1rem' }}>
+      {/* Hiring Section */}
+      <div style={{
+        background: 'linear-gradient(145deg, #0f0f0f, #171717)',
+        borderRadius: '12px',
+        border: '1px solid #262626',
+        padding: '1rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>👥</span>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#e5e5e5' }}>
+              Hire Team Members
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: '#737373' }}>
+              40h per hire + ongoing salary
             </p>
-            <div className="mt-3 flex items-center gap-3">
-              <label className="form-label mb-0">Number this round</label>
-              <input
-                type="number"
-                min="0"
-                max="5"
-                className="form-input"
-                style={{ maxWidth: "100px" }}
-                value={juniorHires}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  onJuniorHiresChange(
-                    Number.isNaN(val) ? 0 : Math.max(0, val)
-                  );
-                }}
-              />
-            </div>
           </div>
         </div>
-      </SectionCard>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ fontSize: '0.875rem', color: '#a3a3a3' }}>Number this round:</span>
+          <input
+            type="number"
+            min="0"
+            max="5"
+            value={juniorHires}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10);
+              onJuniorHiresChange(Number.isNaN(val) ? 0 : Math.max(0, val));
+            }}
+            style={{
+              width: '70px',
+              padding: '0.5rem',
+              borderRadius: '8px',
+              border: '1px solid #333',
+              background: '#0a0a0a',
+              color: '#e5e5e5',
+              fontSize: '1rem',
+              fontWeight: 600,
+              textAlign: 'center',
+            }}
+          />
+        </div>
+      </div>
 
-      {sections.map((section) => {
-        const sectionActivities = section.activities
-          .filter((key) => config.activities[key])
-          .map((key) => ({ key, ...config.activities[key] }));
+      {/* Expert Categories Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+        gap: '0.75rem',
+      }}>
+        {EXPERT_CATEGORIES.map((category) => {
+          const selectionCount = getSelectionCount(category);
+          const availableActivities = category.activities.filter(key => config.activities[key]);
+          const isExpanded = expandedCategory === category.id;
+          const hasAvailable = hasAvailableActivities(category);
 
-        if (sectionActivities.length === 0) return null;
+          if (availableActivities.length === 0) return null;
 
-        return (
-          <SectionCard
-            key={section.id}
-            title={section.title}
-            description={section.description}
-            icon={getSectionIcon(section.id)}
-          >
-            <div className="activities-grid">
-              {sectionActivities.map(({ key, ...activity }) => {
-                const checked = activities[key] || false;
-                const unlockStatus = isActivityUnlocked(
-                  key,
-                  activity,
-                  teamData,
-                  config,
-                  activities  // Pass current round activities
-                );
-                const isLocked = !unlockStatus.unlocked;
-                const justUnlocked = unlockStatus.justUnlocked || false;
-                const isCompletedOneTime = activity.oneTimeOnly && (teamData.completedActivities?.includes(key) || false);
-                const cannotUncheck = activity.oneTimeOnly && checked;
-                const isPivot = key === 'pivot';
+          return (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => toggleCategory(category.id)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '1rem 0.75rem',
+                borderRadius: '12px',
+                border: isExpanded
+                  ? '2px solid #c1fe00'
+                  : selectionCount > 0
+                  ? '2px solid rgba(193, 254, 0, 0.5)'
+                  : '1px solid #333',
+                background: isExpanded
+                  ? 'linear-gradient(145deg, rgba(193, 254, 0, 0.1), rgba(193, 254, 0, 0.02))'
+                  : 'linear-gradient(145deg, #0f0f0f, #171717)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                position: 'relative',
+                opacity: hasAvailable ? 1 : 0.6,
+              }}
+            >
+              <span style={{ fontSize: '1.75rem' }}>{category.icon}</span>
+              <span style={{
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: isExpanded ? '#c1fe00' : '#e5e5e5',
+                textAlign: 'center',
+                lineHeight: 1.2,
+              }}>
+                {category.name}
+              </span>
+              {selectionCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '6px',
+                  right: '6px',
+                  background: '#c1fe00',
+                  color: '#000',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  {selectionCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-                return (
-                  <label
-                    key={key}
-                    className={
-                      "activity-card" +
-                      (checked && !isLocked ? " checked" : "") +
-                      (isLocked ? " opacity-60" : "") +
-                      (isCompletedOneTime ? " opacity-75" : "") +
-                      (isPivot ? " pivot-activity" : "") +
-                      (justUnlocked ? " just-unlocked" : "")
-                    }
-                    style={{
-                      cursor: isLocked || cannotUncheck ? "not-allowed" : "pointer",
-                      ...(justUnlocked && {
-                        borderColor: "rgba(52, 211, 153, 0.5)",
-                        boxShadow: "0 0 20px rgba(52, 211, 153, 0.2)",
-                      })
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked && !isLocked}
-                      disabled={isLocked || cannotUncheck}
-                      onChange={() => {
-                        if (!isLocked && !cannotUncheck) {
-                          onToggle(key);
-                        }
-                      }}
-                      className="activity-checkbox"
-                    />
-                    <div className="activity-content">
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                        }}
-                      >
-                        {isLocked ? (
-                          <Lock size={14} />
-                        ) : justUnlocked ? (
-                          <span style={{ fontSize: '14px' }}>✨</span>
-                        ) : (
-                          <Unlock size={14} style={{ opacity: 0.3 }} />
-                        )}
-                        <p className="activity-name">{activity.name}</p>
-                      </div>
-                      <div className="activity-cost">
-                        <span>{activity.costTime} h</span>
-                        <span style={{ color: '#22c55e', fontWeight: '700' }}>€{activity.costMoney.toLocaleString()}</span>
-                        {activity.stickerCost !== undefined && activity.stickerCost > 0 && (
-                          <span
-                            className={`sticker-badge ${
-                              activity.stickerCost === 2 ? 'heavy-activity' : 'standard-activity'
-                            }`}
-                            style={{
-                              padding: '2px 8px',
-                              borderRadius: '12px',
-                              fontSize: '11px',
-                              fontWeight: '600',
-                              backgroundColor: activity.stickerCost === 2 ? 'rgba(220, 38, 38, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                              color: activity.stickerCost === 2 ? '#fca5a5' : '#fbbf24',
-                              border: `1px solid ${activity.stickerCost === 2 ? 'rgba(220, 38, 38, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
-                            }}
-                          >
-                            {'•'.repeat(activity.stickerCost)} sticker{activity.stickerCost !== 1 ? 's' : ''}
-                          </span>
-                        )}
-                        {activity.stickerCost === 0 && (
-                          <span className="hours-only-badge">
-                            ⏱️ hours only
-                          </span>
-                        )}
-                      </div>
-                      {activity.description && (
-                        <p
-                          className="activity-requirement"
-                          style={{ opacity: 0.8 }}
-                        >
-                          {activity.description}
-                        </p>
-                      )}
-                      {justUnlocked && !isLocked && (
-                        <div
-                          style={{
-                            background: "rgba(52, 211, 153, 0.15)",
-                            color: "#34d399",
-                            padding: "0.25rem 0.5rem",
-                            borderRadius: "4px",
-                            fontSize: "0.75rem",
-                            marginTop: "0.5rem",
-                            fontWeight: 600
-                          }}
-                        >
-                          ✨ Just unlocked this round!
-                        </div>
-                      )}
-                      {isLocked && (
-                        <p
-                          className="activity-requirement"
-                          style={{ color: "#dc2626" }}
-                        >
-                          🔒 {unlockStatus.reason}
-                        </p>
-                      )}
-                      {activity.oneTimeOnly && checked && (
-                        <p
-                          className="activity-requirement"
-                          style={{ color: "#22c55e", fontWeight: 600 }}
-                        >
-                          ✓ One-time activity completed
-                        </p>
-                      )}
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          </SectionCard>
-        );
-      })}
+      {/* Expanded Category Activities */}
+      {expandedCategory && (
+        <div style={{
+          background: 'linear-gradient(145deg, #0a0a0a, #111)',
+          borderRadius: '12px',
+          border: '1px solid #262626',
+          padding: '1rem',
+          animation: 'fadeIn 0.2s ease',
+        }}>
+          {(() => {
+            const category = EXPERT_CATEGORIES.find(c => c.id === expandedCategory);
+            if (!category) return null;
+
+            const availableActivities = category.activities.filter(key => config.activities[key]);
+
+            return (
+              <>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  marginBottom: '1rem',
+                  paddingBottom: '0.75rem',
+                  borderBottom: '1px solid #262626',
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>{category.icon}</span>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#c1fe00' }}>
+                      {category.name}
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#737373' }}>
+                      {category.description}
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                  {availableActivities.map(activityKey => renderActivity(activityKey))}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };
@@ -3293,14 +3467,20 @@ return () => {};
         />
       )}
 
-      <GroupedActivities
-        config={config}
-        activities={activities}
-        onToggle={handleActivityToggle}
-        teamData={teamData}
-        juniorHires={juniorHires}
-        onJuniorHiresChange={setJuniorHires}
-      />
+      <SectionCard
+        title="Activities"
+        description="Click an expert category to see available activities."
+        icon={<Target size={20} />}
+      >
+        <ExpertActivitySelector
+          config={config}
+          activities={activities}
+          onToggle={handleActivityToggle}
+          teamData={teamData}
+          juniorHires={juniorHires}
+          onJuniorHiresChange={setJuniorHires}
+        />
+      </SectionCard>
 
       <SectionCard
         title="Funding & Revenue"

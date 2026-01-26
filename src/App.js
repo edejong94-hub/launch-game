@@ -1463,129 +1463,110 @@ const ExpertActivitySelector = ({
     );
   };
 
+  // Separate team activities from expert activities
+  const teamCategory = EXPERT_CATEGORIES.find(c => c.id === 'team');
+  const expertCategories = EXPERT_CATEGORIES.filter(c => c.id !== 'team');
+
   return (
-    <div style={{ display: 'grid', gap: '1rem' }}>
-      {/* Hiring Section */}
-      <div style={{
-        background: 'linear-gradient(145deg, #0f0f0f, #171717)',
-        borderRadius: '12px',
-        border: '1px solid #262626',
-        padding: '1rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-          <span style={{ fontSize: '1.5rem' }}>👥</span>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#e5e5e5' }}>
-              Hire Team Members
-            </h3>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: '#737373' }}>
-              40h per hire + ongoing salary
-            </p>
-          </div>
+    <div style={{ display: 'grid', gap: '1.5rem' }}>
+      {/* Expert Navigation - At the top */}
+      <div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '0.75rem',
+        }}>
+          <span style={{ fontSize: '1.25rem' }}>🤝</span>
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#e5e5e5' }}>
+            Expert Meetings
+          </h3>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '0.875rem', color: '#a3a3a3' }}>Number this round:</span>
-          <input
-            type="number"
-            min="0"
-            max="5"
-            value={juniorHires}
-            onChange={(e) => {
-              const val = parseInt(e.target.value, 10);
-              onJuniorHiresChange(Number.isNaN(val) ? 0 : Math.max(0, val));
-            }}
-            style={{
-              width: '70px',
-              padding: '0.5rem',
-              borderRadius: '8px',
-              border: '1px solid #333',
-              background: '#0a0a0a',
-              color: '#e5e5e5',
-              fontSize: '1rem',
-              fontWeight: 600,
-              textAlign: 'center',
-            }}
-          />
-        </div>
-      </div>
+        <p style={{
+          margin: '0 0 1rem 0',
+          fontSize: '0.8rem',
+          color: '#737373',
+          lineHeight: 1.5,
+        }}>
+          Schedule meetings with experts to unlock funding, protect IP, validate customers, and grow your network. Each meeting costs time and sometimes money.
+        </p>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+          gap: '0.5rem',
+        }}>
+          {expertCategories.map((category) => {
+            const selectionCount = getSelectionCount(category);
+            const availableActivities = category.activities.filter(key => config.activities[key]);
+            const isExpanded = expandedCategory === category.id;
+            const hasAvailable = hasAvailableActivities(category);
 
-      {/* Expert Categories Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-        gap: '0.75rem',
-      }}>
-        {EXPERT_CATEGORIES.map((category) => {
-          const selectionCount = getSelectionCount(category);
-          const availableActivities = category.activities.filter(key => config.activities[key]);
-          const isExpanded = expandedCategory === category.id;
-          const hasAvailable = hasAvailableActivities(category);
+            if (availableActivities.length === 0) return null;
 
-          if (availableActivities.length === 0) return null;
-
-          return (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => toggleCategory(category.id)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                padding: '1rem 0.75rem',
-                borderRadius: '12px',
-                border: isExpanded
-                  ? '2px solid #c1fe00'
-                  : selectionCount > 0
-                  ? '2px solid rgba(193, 254, 0, 0.5)'
-                  : '1px solid #333',
-                background: isExpanded
-                  ? 'linear-gradient(145deg, rgba(193, 254, 0, 0.1), rgba(193, 254, 0, 0.02))'
-                  : 'linear-gradient(145deg, #0f0f0f, #171717)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                position: 'relative',
-                opacity: hasAvailable ? 1 : 0.6,
-              }}
-            >
-              <span style={{ fontSize: '1.75rem' }}>{category.icon}</span>
-              <span style={{
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                color: isExpanded ? '#c1fe00' : '#e5e5e5',
-                textAlign: 'center',
-                lineHeight: 1.2,
-              }}>
-                {category.name}
-              </span>
-              {selectionCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '6px',
-                  right: '6px',
-                  background: '#c1fe00',
-                  color: '#000',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: '50%',
+            return (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => toggleCategory(category.id)}
+                style={{
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  gap: '0.375rem',
+                  padding: '0.75rem 0.5rem',
+                  borderRadius: '10px',
+                  border: isExpanded
+                    ? '2px solid #c1fe00'
+                    : selectionCount > 0
+                    ? '2px solid rgba(193, 254, 0, 0.5)'
+                    : '1px solid #333',
+                  background: isExpanded
+                    ? 'linear-gradient(145deg, rgba(193, 254, 0, 0.1), rgba(193, 254, 0, 0.02))'
+                    : 'linear-gradient(145deg, #0f0f0f, #171717)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  position: 'relative',
+                  opacity: hasAvailable ? 1 : 0.5,
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>{category.icon}</span>
+                <span style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  color: isExpanded ? '#c1fe00' : '#e5e5e5',
+                  textAlign: 'center',
+                  lineHeight: 1.2,
                 }}>
-                  {selectionCount}
+                  {category.name}
                 </span>
-              )}
-            </button>
-          );
-        })}
+                {selectionCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '4px',
+                    background: '#c1fe00',
+                    color: '#000',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    {selectionCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Expanded Category Activities */}
-      {expandedCategory && (
+      {/* Expanded Expert Category Activities */}
+      {expandedCategory && expandedCategory !== 'team' && (
         <div style={{
           background: 'linear-gradient(145deg, #0a0a0a, #111)',
           borderRadius: '12px',
@@ -1627,6 +1608,88 @@ const ExpertActivitySelector = ({
           })()}
         </div>
       )}
+
+      {/* Divider */}
+      <div style={{
+        height: '1px',
+        background: 'linear-gradient(90deg, transparent, #333, transparent)',
+      }} />
+
+      {/* Team Activities Section */}
+      <div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '0.75rem',
+        }}>
+          <span style={{ fontSize: '1.25rem' }}>🎯</span>
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#e5e5e5' }}>
+            Team Activities
+          </h3>
+        </div>
+        <p style={{
+          margin: '0 0 1rem 0',
+          fontSize: '0.8rem',
+          color: '#737373',
+          lineHeight: 1.5,
+        }}>
+          Internal work you can do with your team. No external meetings required — just your time and focus.
+        </p>
+
+        {/* Hiring */}
+        <div style={{
+          background: 'linear-gradient(145deg, #0f0f0f, #171717)',
+          borderRadius: '10px',
+          border: '1px solid #262626',
+          padding: '0.875rem 1rem',
+          marginBottom: '0.75rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '1.25rem' }}>👥</span>
+              <div>
+                <span style={{ fontWeight: 600, color: '#e5e5e5', fontSize: '0.9rem' }}>
+                  Hire Team Members
+                </span>
+                <div style={{ fontSize: '0.75rem', color: '#737373', marginTop: '0.125rem' }}>
+                  40h per hire • €25k salary/round
+                </div>
+              </div>
+            </div>
+            <input
+              type="number"
+              min="0"
+              max="5"
+              value={juniorHires}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                onJuniorHiresChange(Number.isNaN(val) ? 0 : Math.max(0, val));
+              }}
+              style={{
+                width: '60px',
+                padding: '0.5rem',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                background: '#0a0a0a',
+                color: '#e5e5e5',
+                fontSize: '1rem',
+                fontWeight: 600,
+                textAlign: 'center',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Team Activities List */}
+        {teamCategory && (
+          <div style={{ display: 'grid', gap: '0.5rem' }}>
+            {teamCategory.activities
+              .filter(key => config.activities[key])
+              .map(activityKey => renderActivity(activityKey))}
+          </div>
+        )}
+      </div>
 
       <style>{`
         @keyframes fadeIn {
@@ -1808,19 +1871,13 @@ const EmploymentStatusSelector = ({
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', borderTop: '1px solid rgba(99, 102, 241, 0.1)', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', padding: '0.5rem 0' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem', borderTop: '1px solid rgba(99, 102, 241, 0.1)', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', padding: '0.5rem 0' }}>
                 <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fbbf24' }}>
-                    {'•'.repeat(RESEARCH_CONFIG.stickerSystem[status.id]?.allowance || 0)}
-                  </div>
-                  <div style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>stickers</div>
-                </div>
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f1f5f9' }}>{status.hoursPerFounder * founders}</div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#c1fe00' }}>{status.hoursPerFounder * founders}</div>
                   <div style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>hrs/round</div>
                 </div>
                 <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f1f5f9' }}>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 700, color: salaryTotal > 0 ? '#f1f5f9' : '#4ade80' }}>
                     {salaryTotal > 0 ? `€${salaryTotal.toLocaleString()}` : 'Free'}
                   </div>
                   <div style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>salary</div>

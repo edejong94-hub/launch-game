@@ -9,6 +9,7 @@ import {
   Target,
   Briefcase,
   Lock,
+  ChevronDown,
 } from "lucide-react";
 import { db } from "./firebase";
 import foundedLogo from "./logo.svg";
@@ -1466,153 +1467,127 @@ const ExpertActivitySelector = ({
   const teamCategory = EXPERT_CATEGORIES.find(c => c.id === 'team');
   const expertCategories = EXPERT_CATEGORIES.filter(c => c.id !== 'team');
 
+  // Render a dropdown category
+  const renderDropdownCategory = (category, isTeamSection = false) => {
+    const selectionCount = getSelectionCount(category);
+    const availableActivities = category.activities.filter(key => config.activities[key]);
+    const isExpanded = expandedCategory === category.id;
+    const hasAvailable = hasAvailableActivities(category);
+
+    if (availableActivities.length === 0) return null;
+
+    return (
+      <div
+        key={category.id}
+        style={{
+          background: 'linear-gradient(145deg, #0a0a0a, #0f0f0f)',
+          borderRadius: '10px',
+          border: selectionCount > 0 ? '1px solid rgba(193, 254, 0, 0.3)' : '1px solid #262626',
+          overflow: 'hidden',
+          marginBottom: '0.5rem',
+        }}
+      >
+        {/* Dropdown Header */}
+        <button
+          type="button"
+          onClick={() => toggleCategory(category.id)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.875rem 1rem',
+            background: 'transparent',
+            border: 'none',
+            cursor: hasAvailable ? 'pointer' : 'not-allowed',
+            opacity: hasAvailable ? 1 : 0.5,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '1.25rem' }}>{category.icon}</span>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{
+                fontWeight: 600,
+                color: isExpanded ? '#c1fe00' : '#e5e5e5',
+                fontSize: '0.9rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}>
+                {category.name}
+                {selectionCount > 0 && (
+                  <span style={{
+                    background: '#c1fe00',
+                    color: '#000',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '0.125rem 0.5rem',
+                    borderRadius: '10px',
+                  }}>
+                    {selectionCount} selected
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#737373', marginTop: '0.125rem' }}>
+                {category.description}
+              </div>
+            </div>
+          </div>
+          <ChevronDown
+            size={20}
+            style={{
+              color: isExpanded ? '#c1fe00' : '#737373',
+              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}
+          />
+        </button>
+
+        {/* Dropdown Content */}
+        {isExpanded && (
+          <div style={{
+            padding: '0 1rem 1rem 1rem',
+            borderTop: '1px solid #262626',
+            animation: 'fadeIn 0.15s ease',
+          }}>
+            <div style={{ display: 'grid', gap: '0.5rem', marginTop: '0.75rem' }}>
+              {availableActivities.map(activityKey => renderActivity(activityKey))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div style={{ display: 'grid', gap: '1.5rem' }}>
-      {/* Expert Navigation - At the top */}
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+      {/* Expert Meetings Section */}
       <div>
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
-          marginBottom: '0.75rem',
+          marginBottom: '0.5rem',
         }}>
-          <span style={{ fontSize: '1.25rem' }}>🤝</span>
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#e5e5e5' }}>
+          <span style={{ fontSize: '1.1rem' }}>🤝</span>
+          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#e5e5e5' }}>
             Expert Meetings
           </h3>
         </div>
         <p style={{
-          margin: '0 0 1rem 0',
-          fontSize: '0.8rem',
+          margin: '0 0 0.75rem 0',
+          fontSize: '0.75rem',
           color: '#737373',
-          lineHeight: 1.5,
+          lineHeight: 1.4,
         }}>
-          Schedule meetings with experts to unlock funding, protect IP, validate customers, and grow your network. Each meeting costs time and sometimes money.
+          Schedule meetings to unlock funding, protect IP, and validate customers.
         </p>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
-          gap: '0.5rem',
-        }}>
-          {expertCategories.map((category) => {
-            const selectionCount = getSelectionCount(category);
-            const availableActivities = category.activities.filter(key => config.activities[key]);
-            const isExpanded = expandedCategory === category.id;
-            const hasAvailable = hasAvailableActivities(category);
 
-            if (availableActivities.length === 0) return null;
-
-            return (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => toggleCategory(category.id)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.375rem',
-                  padding: '0.75rem 0.5rem',
-                  borderRadius: '10px',
-                  border: isExpanded
-                    ? '2px solid #c1fe00'
-                    : selectionCount > 0
-                    ? '2px solid rgba(193, 254, 0, 0.5)'
-                    : '1px solid #333',
-                  background: isExpanded
-                    ? 'linear-gradient(145deg, rgba(193, 254, 0, 0.1), rgba(193, 254, 0, 0.02))'
-                    : 'linear-gradient(145deg, #0f0f0f, #171717)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  position: 'relative',
-                  opacity: hasAvailable ? 1 : 0.5,
-                }}
-              >
-                <span style={{ fontSize: '1.5rem' }}>{category.icon}</span>
-                <span style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  color: isExpanded ? '#c1fe00' : '#e5e5e5',
-                  textAlign: 'center',
-                  lineHeight: 1.2,
-                }}>
-                  {category.name}
-                </span>
-                {selectionCount > 0 && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '4px',
-                    right: '4px',
-                    background: '#c1fe00',
-                    color: '#000',
-                    fontSize: '0.65rem',
-                    fontWeight: 700,
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    {selectionCount}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* Expert Dropdown List */}
+        <div>
+          {expertCategories.map(category => renderDropdownCategory(category))}
         </div>
       </div>
-
-      {/* Expanded Expert Category Activities */}
-      {expandedCategory && expandedCategory !== 'team' && (
-        <div style={{
-          background: 'linear-gradient(145deg, #0a0a0a, #111)',
-          borderRadius: '12px',
-          border: '1px solid #262626',
-          padding: '1rem',
-          animation: 'fadeIn 0.2s ease',
-        }}>
-          {(() => {
-            const category = EXPERT_CATEGORIES.find(c => c.id === expandedCategory);
-            if (!category) return null;
-
-            const availableActivities = category.activities.filter(key => config.activities[key]);
-
-            return (
-              <>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  marginBottom: '1rem',
-                  paddingBottom: '0.75rem',
-                  borderBottom: '1px solid #262626',
-                }}>
-                  <span style={{ fontSize: '1.5rem' }}>{category.icon}</span>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#c1fe00' }}>
-                      {category.name}
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#737373' }}>
-                      {category.description}
-                    </p>
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gap: '0.5rem' }}>
-                  {availableActivities.map(activityKey => renderActivity(activityKey))}
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* Divider */}
-      <div style={{
-        height: '1px',
-        background: 'linear-gradient(90deg, transparent, #333, transparent)',
-      }} />
 
       {/* Team Activities Section */}
       <div>
@@ -1620,29 +1595,29 @@ const ExpertActivitySelector = ({
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
-          marginBottom: '0.75rem',
+          marginBottom: '0.5rem',
         }}>
-          <span style={{ fontSize: '1.25rem' }}>🎯</span>
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#e5e5e5' }}>
+          <span style={{ fontSize: '1.1rem' }}>🎯</span>
+          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#e5e5e5' }}>
             Team Activities
           </h3>
         </div>
         <p style={{
-          margin: '0 0 1rem 0',
-          fontSize: '0.8rem',
+          margin: '0 0 0.75rem 0',
+          fontSize: '0.75rem',
           color: '#737373',
-          lineHeight: 1.5,
+          lineHeight: 1.4,
         }}>
-          Internal work you can do with your team. No external meetings required — just your time and focus.
+          Internal work — no external meetings required.
         </p>
 
         {/* Hiring */}
         <div style={{
-          background: 'linear-gradient(145deg, #0f0f0f, #171717)',
+          background: 'linear-gradient(145deg, #0a0a0a, #0f0f0f)',
           borderRadius: '10px',
           border: '1px solid #262626',
           padding: '0.875rem 1rem',
-          marginBottom: '0.75rem',
+          marginBottom: '0.5rem',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -1680,19 +1655,13 @@ const ExpertActivitySelector = ({
           </div>
         </div>
 
-        {/* Team Activities List */}
-        {teamCategory && (
-          <div style={{ display: 'grid', gap: '0.5rem' }}>
-            {teamCategory.activities
-              .filter(key => config.activities[key])
-              .map(activityKey => renderActivity(activityKey))}
-          </div>
-        )}
+        {/* Team Activities as Dropdown */}
+        {teamCategory && renderDropdownCategory(teamCategory, true)}
       </div>
 
       <style>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
+          from { opacity: 0; transform: translateY(-5px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
@@ -3334,6 +3303,22 @@ return () => {};
         />
       )}
 
+      {/* Activities */}
+      <SectionCard
+        title="Activities"
+        description="Select what your team will work on this round."
+        icon={<Target size={20} />}
+      >
+        <ExpertActivitySelector
+          config={config}
+          activities={activities}
+          onToggle={handleActivityToggle}
+          teamData={teamData}
+          juniorHires={juniorHires}
+          onJuniorHiresChange={setJuniorHires}
+        />
+      </SectionCard>
+
       {/* Office selection */}
       <SectionCard
         title="Office / Workspace"
@@ -3514,21 +3499,6 @@ return () => {};
           isUnlocked={licenceUnlocked}
         />
       )}
-
-      <SectionCard
-        title="Activities"
-        description="Click an expert category to see available activities."
-        icon={<Target size={20} />}
-      >
-        <ExpertActivitySelector
-          config={config}
-          activities={activities}
-          onToggle={handleActivityToggle}
-          teamData={teamData}
-          juniorHires={juniorHires}
-          onJuniorHiresChange={setJuniorHires}
-        />
-      </SectionCard>
 
       <SectionCard
         title="Funding & Revenue"

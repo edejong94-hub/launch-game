@@ -254,3 +254,59 @@
     gap: 0.75rem;
   }
 }
+
+/* Diminishing returns breakdown */
+.hour-diminishing {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(99, 102, 241, 0.07);
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.hour-diminishing-title {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+}
+
+.hour-diminishing-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.hour-diminishing-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 64px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hour-diminishing-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.hour-diminishing-bar-wrap {
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.hour-diminishing-bar {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #c1fe00);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.hour-diminishing-value {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  text-align: right;
+}

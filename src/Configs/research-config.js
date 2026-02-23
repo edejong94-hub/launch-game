@@ -62,6 +62,28 @@ employmentStatus: {
 },
 
 // ============================================
+// FOUNDER HOURS SCALE - Diminishing Returns
+// Coordination overhead reduces efficiency with larger teams
+// ============================================
+founderHoursScale: {
+  // Multiplier for each founder position (1st, 2nd, 3rd, etc.)
+  // Represents diminishing returns due to coordination overhead
+  multipliers: [1.0, 0.9, 0.7, 0.5, 0.3],
+
+  // Base hours per employment status (for 1st founder)
+  baseHours: {
+    university: 200,
+    parttime: 600,
+    fulltime: 800,
+  },
+
+  // Pre-calculated team totals for reference:
+  // University: 2=380, 3=520, 4=620, 5=680
+  // Part-time:  2=1140, 3=1560, 4=1860, 5=2040
+  // Full-time:  2=1520, 3=2080, 4=2480, 5=2720
+},
+
+// ============================================
 // STICKER SYSTEM - Expert Meeting Capacity
 // Physical stickers represent slots for expert meetings
 // ============================================
@@ -1162,7 +1184,7 @@ lowRunwayWarning: {
     // === CUSTOMER DISCOVERY ===
     customerInterviews: {
       name: "Customer Discovery Interviews",
-      costTime: 32,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "discovery",
@@ -1172,7 +1194,7 @@ lowRunwayWarning: {
     },
     customerValidation: {
       name: "Customer Validation (LOI/Pilot)",
-      costTime: 48,
+      costTime: 72,
       costMoney: 0,
       stickerCost: 1,
       category: "discovery",
@@ -1184,7 +1206,7 @@ lowRunwayWarning: {
     },
     industryExploration: {
       name: "Industry Partner Exploration",
-      costTime: 32,
+      costTime: 48,
       costMoney: 1000,
       stickerCost: 1,
       category: "discovery",
@@ -1196,7 +1218,7 @@ lowRunwayWarning: {
     // === UNIVERSITY & TTO ===
     ttoDiscussion: {
       name: "TTO: Initial Discussion",
-      costTime: 48,
+      costTime: 72,
       costMoney: 0,
       stickerCost: 1,
       category: "tto",
@@ -1208,7 +1230,7 @@ lowRunwayWarning: {
     },
     ttoNegotiation: {
       name: "TTO: Terms Negotiation",
-      costTime: 48,
+      costTime: 72,
       costMoney: 0,
       stickerCost: 1,
       category: "tto",
@@ -1218,7 +1240,7 @@ lowRunwayWarning: {
     },
     licenceNegotiation: {
       name: "Licence Agreement",
-      costTime: 64,
+      costTime: 96,
       costMoney: 2000,
       stickerCost: 2,
       category: "tto",
@@ -1230,7 +1252,7 @@ lowRunwayWarning: {
     },
     labNegotiation: {
       name: "Lab Access Negotiation",
-      costTime: 32,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "tto",
@@ -1239,7 +1261,7 @@ lowRunwayWarning: {
     },
     universityExit: {
       name: "University Exit Discussion",
-      costTime: 48,
+      costTime: 72,
       costMoney: 0,
       stickerCost: 1,
       category: "tto",
@@ -1250,7 +1272,7 @@ lowRunwayWarning: {
     // === INTELLECTUAL PROPERTY ===
     patentSearch: {
       name: "Patent: Freedom to Operate",
-      costTime: 32,
+      costTime: 48,
       costMoney: 2000,
       stickerCost: 1,
       category: "ip",
@@ -1261,7 +1283,7 @@ lowRunwayWarning: {
     },
     patentFiling: {
       name: "Patent: Professional Filing",
-      costTime: 80,
+      costTime: 120,
       costMoney: 15000,
       stickerCost: 2,
       category: "ip",
@@ -1274,7 +1296,7 @@ lowRunwayWarning: {
     },
     knowHowProtection: {
       name: "Know-How Protection",
-      costTime: 32,
+      costTime: 48,
       costMoney: 2500,
       stickerCost: 1,
       category: "ip",
@@ -1290,7 +1312,7 @@ lowRunwayWarning: {
     // === FUNDING & GRANTS ===
     grantTakeoff: {
       name: "NWO Take-off Application",
-      costTime: 64,
+      costTime: 96,
       costMoney: 0,
       stickerCost: 2,
       category: "funding",
@@ -1301,7 +1323,7 @@ lowRunwayWarning: {
     },
     grantWBSO: {
       name: "WBSO Registration",
-      costTime: 32,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "funding",
@@ -1311,7 +1333,7 @@ lowRunwayWarning: {
     },
     grantRegional: {
       name: "Regional Fund (ROM/MIT)",
-      costTime: 48,
+      costTime: 72,
       costMoney: 0,
       stickerCost: 1,
       category: "funding",
@@ -1321,7 +1343,7 @@ lowRunwayWarning: {
     },
     investorMeeting: {
       name: "Investor Meeting",
-      costTime: 32,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "funding",
@@ -1333,7 +1355,7 @@ lowRunwayWarning: {
     },
     investorNegotiation: {
       name: "Term Sheet Negotiation",
-      costTime: 48,
+      costTime: 72,
       costMoney: 5000,
       stickerCost: 2,
       category: "funding",
@@ -1346,7 +1368,7 @@ lowRunwayWarning: {
     // === BANK & LOANS (NEW) ===
     bankMeeting: {
       name: "Bank: Initial Meeting",
-      costTime: 32,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "banking",
@@ -1358,7 +1380,7 @@ lowRunwayWarning: {
     },
     loanApplication: {
       name: "Loan Application",
-      costTime: 48,
+      costTime: 72,
       costMoney: 500,
       stickerCost: 1,
       category: "banking",
@@ -1370,7 +1392,7 @@ lowRunwayWarning: {
     },
     raboInnovatielening: {
       name: "Rabo Innovatielening",
-      costTime: 64,
+      costTime: 96,
       costMoney: 1000,
       stickerCost: 2,
       category: "banking",
@@ -1411,7 +1433,7 @@ lowRunwayWarning: {
     // === TEAM & HIRING ===
     cofounderAgreement: {
       name: "Co-founder Agreement",
-      costTime: 32,
+      costTime: 80,
       costMoney: 2000,
       stickerCost: 0,
       category: "team",
@@ -1419,7 +1441,7 @@ lowRunwayWarning: {
     },
     hireBusinessPerson: {
       name: "Hire: Business/Sales Expert",
-      costTime: 48,
+      costTime: 120,
       costMoney: 0,
       stickerCost: 0,
       category: "team",
@@ -1429,7 +1451,7 @@ lowRunwayWarning: {
     },
     hireMarketExpert: {
       name: "Hire: Market Expert",
-      costTime: 48,
+      costTime: 120,
       costMoney: 0,
       stickerCost: 0,
       category: "team",
@@ -1439,7 +1461,7 @@ lowRunwayWarning: {
     },
     hireOperations: {
       name: "Hire: Operations/Finance",
-      costTime: 48,
+      costTime: 120,
       costMoney: 0,
       stickerCost: 0,
       category: "team",
@@ -1449,7 +1471,7 @@ lowRunwayWarning: {
     },
     networking: {
       name: "Conference / Demo Day",
-      costTime: 48,
+      costTime: 100,
       costMoney: 1000,
       stickerCost: 0,
       category: "team",
@@ -1460,7 +1482,7 @@ lowRunwayWarning: {
     // === PRODUCT DEVELOPMENT ===
     prototypeDevelopment: {
       name: "Prototype Development",
-      costTime: 96,
+      costTime: 250,
       costMoney: 5000,
       stickerCost: 0,
       category: "development",
@@ -1469,7 +1491,7 @@ lowRunwayWarning: {
     },
     pilotProject: {
       name: "Pilot Project",
-      costTime: 80,
+      costTime: 120,
       costMoney: 10000,
       stickerCost: 2,
       category: "development",
@@ -1482,7 +1504,7 @@ lowRunwayWarning: {
     },
     incubatorApplication: {
       name: "Incubator Application",
-      costTime: 32,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "development",
@@ -1498,7 +1520,7 @@ lowRunwayWarning: {
     pivot: {
       name: "🔄 Pivot Business Direction",
       stickerCost: 0,  // Internal decision, no expert needed
-      costTime: 200,   // Very time intensive - rebuilding your approach!
+      costTime: 350,   // Very time intensive - rebuilding your approach!
       costMoney: 5000, // Some costs for new materials, prototypes, etc.
       category: 'strategy',
       description: "Major change in business direction based on market feedback",

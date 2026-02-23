@@ -416,10 +416,9 @@ const calculateProgress = (teamData, config) => {
       ? config.companyOffice[teamData.office].productivity
       : 1.0;
 
-  // Get hours per founder based on employment status
-  const hoursPerFounder = employmentStatusConfig[teamData.employmentStatus || 'university']?.hoursPerFounder || 200;
-  const baseHours = (teamData.founders || (isResearchMode ? 2 : 4)) * hoursPerFounder;
-  const availableHours = baseHours * productivityMultiplier;
+  // Get total hours using diminishing returns for team size
+  const baseHours = getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || (isResearchMode ? 2 : 4));
+  const availableHours = Math.round(baseHours * productivityMultiplier);
   const developmentHours = availableHours - totalTimeSpent;
 
   // --- TRL CALCULATION (Research mode) ---
@@ -652,9 +651,16 @@ const isOfficeAvailable = (officeKey, officeOption, teamData, currentRoundActivi
 // ============================================
 // EMPLOYMENT STATUS HELPERS (University Dilemma)
 // ============================================
+const FOUNDER_MULTIPLIERS = [1.0, 0.9, 0.7, 0.5, 0.3];
+const BASE_HOURS = { university: 200, parttime: 600, fulltime: 800 };
+
 const getAvailableHours = (status, founderCount) => {
-  const hoursPerFounder = employmentStatusConfig[status]?.hoursPerFounder || 200;
-  return hoursPerFounder * founderCount;
+  const base = BASE_HOURS[status] || 200;
+  let total = 0;
+  for (let i = 0; i < Math.min(founderCount, 5); i++) {
+    total += base * FOUNDER_MULTIPLIERS[i];
+  }
+  return Math.round(total);
 };
 
 const getFounderSalaryCost = (status, founderCount) => {
@@ -1784,7 +1790,7 @@ const EmploymentStatusSelector = ({
 
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem', borderTop: '1px solid rgba(99, 102, 241, 0.1)', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', padding: '0.5rem 0' }}>
                 <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#c1fe00' }}>{status.hoursPerFounder * founders}</div>
+                  <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#c1fe00' }}>{getAvailableHours(status.id, founders)}</div>
                   <div style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>hrs/round</div>
                 </div>
                 <div style={{ textAlign: 'center', flex: 1 }}>

@@ -3314,6 +3314,13 @@ return () => {};
         />
       )}
 
+      {(employmentStatus === 'university' || employmentStatus === 'parttime') && (
+        <InterruptCardRow
+          employmentStatus={employmentStatus}
+          onImpactChange={setInterruptImpact}
+        />
+      )}
+
       {/* Activities */}
       <SectionCard
         title="Activities"
@@ -3630,13 +3637,6 @@ return () => {};
           </div>
         </div>
       </SectionCard>
-
-      {(employmentStatus === 'university' || employmentStatus === 'parttime') && (
-        <InterruptCardRow
-          employmentStatus={employmentStatus}
-          onImpactChange={setInterruptImpact}
-        />
-      )}
 
       <SectionCard
         title="Round Summary"

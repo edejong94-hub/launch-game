@@ -1,6 +1,7 @@
 import GameEventPopup, { checkEventTrigger } from './Components/Gameeventpopup';
 import EndGameScoreBreakdown from './Components/EndGameScoreBreakdown';
 import PivotReasonSelector from './Components/PivotReasonSelector';
+import InterruptCardRow from './Components/InterruptCardRow';
 import React, { useState, useEffect, useCallback } from "react";
 import {
   CheckCircle,
@@ -1898,6 +1899,9 @@ const startingCapital = config.gameInfo.startingCapital;
   const [showPivotModal, setShowPivotModal] = useState(false);
   const [pivotHistory, setPivotHistory] = useState(initialData?.pivotHistory || []);
 
+  // Interrupt cards
+  const [interruptImpact, setInterruptImpact] = useState({ hours: 0, money: 0, trl: 0, freeExpert: false, cards: [] });
+
   const [startupIdea, setStartupIdea] = useState(initialData?.startupIdea || {
     technique: "",
     productIdea: "",
@@ -2344,7 +2348,7 @@ return () => {};
   office,
   activities,
   round: currentRound,
-  cash: progress.cash,
+  cash: progress.cash + (interruptImpact.money || 0),
   startupIdea,
   legalForm,
   employees,
@@ -2359,7 +2363,7 @@ return () => {};
   interviewCount: progress.interviewsTotal,
   validationCount: adjustedValidations,
   completedActivities: newCompletedActivities,
-  trl: adjustedTRL,
+  trl: Math.min(9, adjustedTRL + (interruptImpact.trl || 0)),
   pivotHistory: [...(teamData.pivotHistory || []), ...pivotHistory],
   lastPivotRound: activities.pivot ? currentRound : (teamData.lastPivotRound ?? null),
 
@@ -3626,6 +3630,13 @@ return () => {};
           </div>
         </div>
       </SectionCard>
+
+      {(employmentStatus === 'university' || employmentStatus === 'parttime') && (
+        <InterruptCardRow
+          employmentStatus={employmentStatus}
+          onImpactChange={setInterruptImpact}
+        />
+      )}
 
       <SectionCard
         title="Round Summary"

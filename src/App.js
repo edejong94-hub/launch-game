@@ -286,7 +286,7 @@ const calculateProgress = (teamData, config) => {
   // --- LEGAL FORM: salaries + trust modifiers ---
   if (teamData.legalForm && config.legalForms[teamData.legalForm]) {
     const form = config.legalForms[teamData.legalForm];
-    const foundersCount = teamData.founders || (isResearchMode ? 2 : 4);
+    const foundersCount = teamData.founders || (isResearchMode ? 3 : 4);
 
     if (form.salaryPerFounderHalfYear && form.salaryPerFounderHalfYear > 0) {
       totalMoneySpent += foundersCount * form.salaryPerFounderHalfYear;
@@ -448,7 +448,7 @@ const calculateProgress = (teamData, config) => {
       : 1.0;
 
   // Get total hours using diminishing returns for team size
-  const baseHours = getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || (isResearchMode ? 2 : 4));
+  const baseHours = getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || (isResearchMode ? 3 : 4));
   const availableHours = Math.round(baseHours * productivityMultiplier);
   const developmentHours = availableHours - totalTimeSpent;
 
@@ -1930,7 +1930,7 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   const [isOffline, setIsOffline] = useState(!isOnline());
   const [showEndGameScore, setShowEndGameScore] = useState(false);
   const totalRounds = config.gameInfo.totalRounds;
-const startingCapital = config.gameInfo.startingCapital;
+  const startingCapital = config.gameInfo.startingCapital;
  
   // Research mode specific state
   const [teamProfiles, setTeamProfiles] = useState(initialData?.teamProfiles || ["", "", ""]);
@@ -1989,8 +1989,6 @@ const startingCapital = config.gameInfo.startingCapital;
   // ============================================
   const checkAndTriggerEvents = useCallback(
   (context) => {
-    console.log("checkAndTriggerEvents called with:", context);
-    console.log("config.gameEvents:", config.gameEvents);
     if (!config?.gameEvents) return;
 
     for (const [eventId, eventConfig] of Object.entries(config.gameEvents)) {
@@ -2260,13 +2258,6 @@ return () => {};
       teamRegistrationData.trl = 3;
     }
 
-    console.log("🔥 Registering team in Firestore:", {
-      gameId,
-      oderId,
-      path: `games/${gameId}/teams/${oderId}`,
-      teamData: teamRegistrationData
-    });
-
     try {
       await retryOperation(async () => {
         await setDoc(
@@ -2276,7 +2267,6 @@ return () => {};
         );
       }, 3, 1000);
 
-      console.log("✅ Team registered successfully");
       toast.success('Team registered! You will appear on the facilitator dashboard.');
     } catch (err) {
       logError('Register Team', err, {
@@ -2393,7 +2383,6 @@ return () => {};
       adjustedTRL = Math.max(3, progress.currentTRL - 1);
       // Reset validations to 0
       adjustedValidations = 0;
-      console.log(`Pivot: TRL reduced from ${progress.currentTRL} to ${adjustedTRL}, validations reset to 0`);
     }
 
     const newTeamData = {
@@ -2466,13 +2455,6 @@ return () => {};
       progress,
     };
 
-    console.log("🔥 Attempting to save round data to Firestore:", {
-      gameId,
-      oderId,
-      round: currentRound,
-      path: `games/${gameId}/teams/${oderId}/rounds/${currentRound}`
-    });
-
     try {
       // Save round data with retry logic
       await retryOperation(async () => {
@@ -2481,8 +2463,6 @@ return () => {};
           sanitizeForFirestore(roundData)
         );
       }, 3, 1000);  // 3 retries, 1 second initial delay
-
-      console.log("✅ Round data saved successfully");
 
       // Save team data with retry logic
       const teamDocData = {
@@ -2513,13 +2493,6 @@ return () => {};
         teamDocData.licenceAgreement = newTeamData.licenceAgreement || null;
       }
 
-      console.log("🔥 Attempting to save team data to Firestore:", {
-        gameId,
-        oderId,
-        path: `games/${gameId}/teams/${oderId}`,
-        teamData: teamDocData
-      });
-
       await retryOperation(async () => {
         await setDoc(
           doc(db, "games", gameId, "teams", oderId),
@@ -2528,7 +2501,6 @@ return () => {};
         );
       }, 3, 1000);
 
-      console.log("✅ Team data saved successfully");
       toast.success('Round submitted successfully!');
 
     } catch (err) {
@@ -3235,9 +3207,7 @@ return () => {};
         <GameEventPopup
           event={activeEvent}
           onDismiss={() => setActiveEvent(null)}
-          onAction={(handler) => {
-            console.log('Event action:', handler);
-          }}
+          onAction={() => {}}
         />
       )}
 
@@ -3820,7 +3790,7 @@ export default function LaunchGame() {
                 startupIdea: data.startupIdea || roundData.startupIdea,
                 employmentStatus: roundData.employmentStatus ?? 'university',
                 teamData: {
-                  cash: roundData.progress?.cash ?? roundData.cash ?? GAME_CONFIG.gameInfo.startingCapital,
+                  cash: roundData.progress?.cash ?? roundData.cash ?? startingCapital,
                   phase: roundData.phase ?? 1,
                   employees: roundData.employees ?? 0,
                   hasSenior: roundData.hasSenior ?? false,
@@ -3837,7 +3807,6 @@ export default function LaunchGame() {
               setInitialData(validatedData);
               saveSession(validatedData); // Save to localStorage for faster future loads
               setLoading(false);
-              console.log('✅ Session restored from Firebase');
               return;
             }
           }
@@ -3859,7 +3828,6 @@ export default function LaunchGame() {
             const validatedLocalData = validateInitialData(localData);
             setInitialData(validatedLocalData);
             setLoading(false);
-            console.log('✅ Session restored from localStorage (Firebase unavailable)');
             return;
           }
         }

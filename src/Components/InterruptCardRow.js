@@ -1,76 +1,80 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { INTERRUPT_CARDS } from '../Configs/interrupt-cards';
+import { INTERRUPT_CARDS, INTERRUPT_CARD_GROUPS } from '../Configs/interrupt-cards';
 import './InterruptCardRow.css';
 
-const TIME_CARDS  = Object.values(INTERRUPT_CARDS).filter(c => c.category?.startsWith('time_') && c.category !== 'time_money_combo');
-const MONEY_CARDS = Object.values(INTERRUPT_CARDS).filter(c => c.category === 'money' || c.category === 'time_money_combo');
-const POS_CARDS   = Object.values(INTERRUPT_CARDS).filter(c => c.isPositive);
+// Build a lookup map for fast access
+const CARD_MAP = Object.fromEntries(INTERRUPT_CARDS.map(c => [c.id, c]));
 
 function InterruptCardRow({ employmentStatus, onImpactChange }) {
   const cardCount = employmentStatus === 'university' ? 2 : 1;
-  const [cards, setCards] = useState(Array(cardCount).fill('noCard'));
+  const [selected, setSelected] = useState(Array(cardCount).fill(''));
 
-  const calcImpact = useCallback((cardList) => {
+  const calcImpact = useCallback((cardIds) => {
     let hours = 0, money = 0, trl = 0, freeExpert = false;
-    cardList.forEach(id => {
-      const card = INTERRUPT_CARDS[id];
-      if (card?.effect) {
-        hours += card.effect.hours || 0;
-        money += card.effect.money || 0;
-        trl   += card.effect.trl   || 0;
-        if (card.effect.freeExpertMeeting) freeExpert = true;
+    const cards = [];
+    cardIds.forEach(id => {
+      const card = CARD_MAP[id];
+      if (card) {
+        hours += card.hours || 0;
+        money += card.money || 0;
+        trl   += card.trl   || 0;
+        if (card.freeExpert) freeExpert = true;
+        cards.push(card);
       }
     });
-    return { hours, money, trl, freeExpert, cards: cardList };
+    return { hours, money, trl, freeExpert, cards };
   }, []);
 
   useEffect(() => {
-    onImpactChange(calcImpact(cards));
-  }, [cards, calcImpact, onImpactChange]);
+    onImpactChange(calcImpact(selected));
+  }, [selected, calcImpact, onImpactChange]);
 
   const handleChange = (index, value) => {
-    const next = [...cards];
-    next[index] = value;
-    setCards(next);
+    setSelected(prev => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
   };
 
-  const impact = calcImpact(cards);
+  const impact = calcImpact(selected);
+  const hasPositive = impact.hours > 0 || impact.money > 0 || impact.trl > 0 || impact.freeExpert;
+  const hasNegative = impact.hours < 0 || impact.money < 0;
 
   const parts = [];
   if (impact.hours !== 0) parts.push(`${impact.hours > 0 ? '+' : ''}${impact.hours} hrs`);
-  if (impact.money !== 0) parts.push(`${impact.money > 0 ? '+' : '-'}€${Math.abs(impact.money)}`);
-  if (impact.trl   > 0)  parts.push(`+${impact.trl} TRL`);
+  if (impact.money !== 0) parts.push(`${impact.money > 0 ? '+' : ''}€${impact.money.toLocaleString()}`);
+  if (impact.trl   >  0) parts.push(`+${impact.trl} TRL`);
   if (impact.freeExpert) parts.push('free expert');
   const impactText = parts.length > 0 ? parts.join(', ') : 'No impact';
 
-  const hasPositive = cards.some(id => INTERRUPT_CARDS[id]?.isPositive);
-  const hasNegative = cards.some(id => {
-    const e = INTERRUPT_CARDS[id]?.effect;
-    return e && (e.hours < 0 || e.money < 0);
-  });
-
   return (
     <div className={`interrupt-row${hasPositive ? ' positive' : hasNegative ? ' negative' : ''}`}>
-      <span className="ir-label">⚡ Interrupts:</span>
+      <span className="ir-label">⚡ Interrupts ({cardCount}):</span>
 
-      {cards.map((cardId, i) => (
-        <select
-          key={i}
-          value={cardId}
-          onChange={e => handleChange(i, e.target.value)}
-          className="ir-select"
-        >
-          <option value="noCard">No card</option>
-          <optgroup label="Time Loss">
-            {TIME_CARDS.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-          </optgroup>
-          <optgroup label="Money Loss">
-            {MONEY_CARDS.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-          </optgroup>
-          <optgroup label="Positive">
-            {POS_CARDS.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-          </optgroup>
-        </select>
+      {selected.map((val, i) => (
+        <div key={i} className="ir-slot">
+          <label className="ir-slot-label">Card {i + 1}</label>
+          <select
+            value={val}
+            onChange={e => handleChange(i, e.target.value)}
+            className="ir-select"
+          >
+            <option value="">-- Select card # --</option>
+            {INTERRUPT_CARD_GROUPS.map(group => (
+              <optgroup key={group.label} label={group.label}>
+                {group.ids.map(id => {
+                  const card = CARD_MAP[id];
+                  return (
+                    <option key={id} value={id}>
+                      #{id} – {card.name}
+                    </option>
+                  );
+                })}
+              </optgroup>
+            ))}
+          </select>
+        </div>
       ))}
 
       <span className={`ir-impact${hasPositive ? ' positive' : hasNegative ? ' negative' : ''}`}>

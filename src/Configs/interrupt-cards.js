@@ -1,73 +1,81 @@
 // Interrupt Cards — University & Part-time founders only
-// Drawn from a physical deck; selected in the UI at round submission
+// Drawn from a physical deck; players find card number and select in UI
 
-export const INTERRUPT_CARDS = {
-  noCard: { id: 'noCard', title: 'No card', effect: {} },
+export const INTERRUPT_CARDS = [
+  // Teaching & Supervision (#01-10)
+  { id: '01', name: 'Bachelor Thesis Supervision', hours: -40, money: 0,     trl: 0 },
+  { id: '02', name: 'Master Thesis Committee',     hours: -50, money: 0,     trl: 0 },
+  { id: '03', name: 'Guest Lecture Request',        hours: -25, money: 0,     trl: 0 },
+  { id: '04', name: 'Course Redesign Required',     hours: -60, money: 0,     trl: 0 },
+  { id: '05', name: 'Exam Grading Pile',            hours: -35, money: 0,     trl: 0 },
+  { id: '06', name: 'Student Complaints',           hours: -30, money: -500,  trl: 0 },
+  { id: '07', name: 'Teaching Award Nomination',    hours: 0,   money: 1000,  trl: 0 },
+  { id: '08', name: 'Popular Professor',            hours: -25, money: 0,     trl: 0 },
+  { id: '09', name: 'PhD Defense Committee',        hours: -40, money: 0,     trl: 0 },
+  { id: '10', name: 'Accreditation Visit',          hours: -50, money: 0,     trl: 0 },
 
-  // -25 hours (10 cards)
-  studentOfficeHours:     { id: 'studentOfficeHours',     title: 'Student Office Hours',     effect: { hours: -25 }, category: 'time_minor' },
-  emailAvalanche:         { id: 'emailAvalanche',         title: 'Email Avalanche',           effect: { hours: -25 }, category: 'time_minor' },
-  itSystemUpdate:         { id: 'itSystemUpdate',         title: 'IT System Update',          effect: { hours: -25 }, category: 'time_minor' },
-  fireDrill:              { id: 'fireDrill',              title: 'Fire Drill',                effect: { hours: -25 }, category: 'time_minor' },
-  printerEmergency:       { id: 'printerEmergency',       title: 'Printer Emergency',         effect: { hours: -25 }, category: 'time_minor' },
-  coffeeMachinePolitics:  { id: 'coffeeMachinePolitics',  title: 'Coffee Machine Politics',   effect: { hours: -25 }, category: 'time_minor' },
-  parkingPermit:          { id: 'parkingPermit',          title: 'Parking Permit Renewal',    effect: { hours: -25 }, category: 'time_minor' },
-  buildingMaintenance:    { id: 'buildingMaintenance',    title: 'Building Maintenance',      effect: { hours: -25 }, category: 'time_minor' },
-  seminarAttendance:      { id: 'seminarAttendance',      title: 'Seminar Attendance',        effect: { hours: -25 }, category: 'time_minor' },
-  ethicsFormRevision:     { id: 'ethicsFormRevision',     title: 'Ethics Form Revision',      effect: { hours: -25 }, category: 'time_minor' },
+  // Research & Academic (#11-20)
+  { id: '11', name: 'Paper Revision Deadline',      hours: -45, money: 0,     trl: 0 },
+  { id: '12', name: 'Conference Presentation',      hours: -35, money: -800,  trl: 0 },
+  { id: '13', name: 'Grant Report Due',             hours: -40, money: 0,     trl: 0 },
+  { id: '14', name: 'Peer Review Request',          hours: -25, money: 0,     trl: 0 },
+  { id: '15', name: 'Lab Equipment Breakdown',      hours: 0,   money: -1500, trl: 0 },
+  { id: '16', name: 'Research Collaboration',       hours: 0,   money: 0,     trl: 1 },
+  { id: '17', name: 'Unexpected Citation',          hours: 0,   money: 500,   trl: 0 },
+  { id: '18', name: 'Journal Editor Duties',        hours: -30, money: 0,     trl: 0 },
+  { id: '19', name: 'Failed Experiment',            hours: -50, money: 0,     trl: 0 },
+  { id: '20', name: 'Breakthrough Discovery',       hours: -30, money: 0,     trl: 1 },
 
-  // -50 hours (16 cards)
-  teachingEmergency:          { id: 'teachingEmergency',          title: 'Teaching Emergency',            effect: { hours: -50 }, category: 'time_medium' },
-  phdStudentCrisis:           { id: 'phdStudentCrisis',           title: 'PhD Student Crisis',            effect: { hours: -50 }, category: 'time_medium' },
-  peerReviewRequest:          { id: 'peerReviewRequest',          title: 'Peer Review Request',           effect: { hours: -50 }, category: 'time_medium' },
-  masterThesisSupervision:    { id: 'masterThesisSupervision',    title: 'Master Thesis Supervision',     effect: { hours: -50 }, category: 'time_medium' },
-  labSafetyTraining:          { id: 'labSafetyTraining',          title: 'Lab Safety Training',           effect: { hours: -50 }, category: 'time_medium' },
-  facultyRetreat:             { id: 'facultyRetreat',             title: 'Faculty Retreat',               effect: { hours: -50 }, category: 'time_medium' },
-  grantReportDue:             { id: 'grantReportDue',             title: 'Grant Report Due',              effect: { hours: -50 }, category: 'time_medium' },
-  courseRedesign:             { id: 'courseRedesign',             title: 'Course Redesign',               effect: { hours: -50 }, category: 'time_medium' },
-  bachelorProjectGrading:     { id: 'bachelorProjectGrading',     title: 'Bachelor Project Grading',      effect: { hours: -50 }, category: 'time_medium' },
-  externalExaminer:           { id: 'externalExaminer',           title: 'External Examiner',             effect: { hours: -50 }, category: 'time_medium' },
-  researchDataManagement:     { id: 'researchDataManagement',     title: 'Research Data Management',      effect: { hours: -50 }, category: 'time_medium' },
-  teachingEvaluationFeedback: { id: 'teachingEvaluationFeedback', title: 'Teaching Evaluation Feedback',  effect: { hours: -50 }, category: 'time_medium' },
-  collaborationMeeting:       { id: 'collaborationMeeting',       title: 'Collaboration Meeting',         effect: { hours: -50 }, category: 'time_medium' },
-  labInventory:               { id: 'labInventory',               title: 'Lab Inventory',                 effect: { hours: -50 }, category: 'time_medium' },
-  referenceLetters:           { id: 'referenceLetters',           title: 'Reference Letters',             effect: { hours: -50 }, category: 'time_medium' },
-  departmentPolitics:         { id: 'departmentPolitics',         title: 'Department Politics',           effect: { hours: -50, money: -500 }, category: 'time_money_combo' },
+  // Administrative & Meetings (#21-30)
+  { id: '21', name: 'Faculty Meeting Marathon',     hours: -25, money: 0,     trl: 0 },
+  { id: '22', name: 'Committee Assignment',         hours: -35, money: 0,     trl: 0 },
+  { id: '23', name: 'Budget Review Required',       hours: -30, money: 0,     trl: 0 },
+  { id: '24', name: 'HR Paperwork',                 hours: -20, money: 0,     trl: 0 },
+  { id: '25', name: 'Strategy Day',                 hours: -40, money: 0,     trl: 0 },
+  { id: '26', name: 'Compliance Training',          hours: -25, money: 0,     trl: 0 },
+  { id: '27', name: 'IT System Migration',          hours: -30, money: 0,     trl: 0 },
+  { id: '28', name: 'Annual Performance Review',    hours: -25, money: 0,     trl: 0 },
+  { id: '29', name: 'Department Restructuring',     hours: -40, money: 0,     trl: 0 },
+  { id: '30', name: 'Workspace Relocation',         hours: -35, money: -500,  trl: 0 },
 
-  // -75 hours (13 cards)
-  grantDeadline:              { id: 'grantDeadline',              title: 'Grant Deadline',                effect: { hours: -75 }, category: 'time_major' },
-  conferenceOrganization:     { id: 'conferenceOrganization',     title: 'Conference Organization',       effect: { hours: -75 }, category: 'time_major' },
-  newCoursePreparation:       { id: 'newCoursePreparation',       title: 'New Course Preparation',        effect: { hours: -75 }, category: 'time_major' },
-  phdCommitteeMeeting:        { id: 'phdCommitteeMeeting',        title: 'PhD Committee Meeting',         effect: { hours: -75 }, category: 'time_major' },
-  researchProposal:           { id: 'researchProposal',           title: 'Research Proposal',             effect: { hours: -75 }, category: 'time_major' },
-  departmentStrategicPlanning:{ id: 'departmentStrategicPlanning',title: 'Department Strategic Planning', effect: { hours: -75 }, category: 'time_major' },
-  visitingResearcher:         { id: 'visitingResearcher',         title: 'Visiting Researcher',           effect: { hours: -75 }, category: 'time_major' },
-  mediaInterview:             { id: 'mediaInterview',             title: 'Media Interview',               effect: { hours: -75 }, category: 'time_major' },
-  industryWorkshop:           { id: 'industryWorkshop',           title: 'Industry Workshop',             effect: { hours: -75 }, category: 'time_major' },
-  sabbaticalPlanning:         { id: 'sabbaticalPlanning',         title: 'Sabbatical Planning',           effect: { hours: -75 }, category: 'time_major' },
-  committeeMeeting:           { id: 'committeeMeeting',           title: 'Committee Meeting',             effect: { hours: -75 }, category: 'time_major' },
-  deansEmergencyMeeting:      { id: 'deansEmergencyMeeting',      title: "Dean's Emergency Meeting",      effect: { hours: -75 }, category: 'time_major' },
-  phdDefenseConflict:         { id: 'phdDefenseConflict',         title: 'PhD Defense Conflict',          effect: { hours: -75, money: -100 }, category: 'time_money_combo' },
+  // University Politics (#31-40)
+  { id: '31', name: "Dean's Special Request",       hours: -45, money: 0,     trl: 0 },
+  { id: '32', name: 'Interdepartmental Conflict',   hours: -30, money: 0,     trl: 0 },
+  { id: '33', name: 'Policy Change Consultation',   hours: -25, money: 0,     trl: 0 },
+  { id: '34', name: 'Union Negotiations',           hours: -20, money: 0,     trl: 0 },
+  { id: '35', name: 'Media Interview Request',      hours: -15, money: 500,   trl: 0 },
+  { id: '36', name: 'Alumni Event',                 hours: -25, money: 0,     trl: 0 },
+  { id: '37', name: 'Funding Politics',             hours: -35, money: 0,     trl: 0 },
+  { id: '38', name: 'Colleague Sabbatical Cover',   hours: -60, money: 0,     trl: 0 },
+  { id: '39', name: 'New Professor Onboarding',     hours: -30, money: 0,     trl: 0 },
+  { id: '40', name: 'Department Head Pressure',     hours: -40, money: 0,     trl: 0 },
 
-  // -100 hours (6 cards)
-  conferencePaperDeadline:    { id: 'conferencePaperDeadline',    title: 'Conference Paper Deadline',     effect: { hours: -100 }, category: 'time_catastrophic' },
-  majorGrantApplication:      { id: 'majorGrantApplication',      title: 'Major Grant Application',       effect: { hours: -100 }, category: 'time_catastrophic' },
-  tenureReviewPreparation:    { id: 'tenureReviewPreparation',    title: 'Tenure Review Preparation',     effect: { hours: -100 }, category: 'time_catastrophic' },
-  journalRevision:            { id: 'journalRevision',            title: 'Journal Revision',              effect: { hours: -100 }, category: 'time_catastrophic' },
-  accreditationDocumentation: { id: 'accreditationDocumentation', title: 'Accreditation Documentation',   effect: { hours: -100 }, category: 'time_catastrophic' },
-  unexpectedTeaching:         { id: 'unexpectedTeaching',         title: 'Unexpected Teaching',           effect: { hours: -100 }, category: 'time_catastrophic' },
+  // Personal & Life Events (#41-50)
+  { id: '41', name: 'Family Emergency',             hours: -50, money: 0,     trl: 0 },
+  { id: '42', name: 'Sick Days',                    hours: -40, money: 0,     trl: 0 },
+  { id: '43', name: 'Childcare Crisis',             hours: -35, money: 0,     trl: 0 },
+  { id: '44', name: 'Home Repairs',                 hours: -25, money: -1000, trl: 0 },
+  { id: '45', name: 'Car Breakdown',                hours: 0,   money: -800,  trl: 0 },
+  { id: '46', name: 'Vacation (Mandatory)',          hours: -60, money: 0,     trl: 0 },
+  { id: '47', name: 'Wedding/Funeral',              hours: -30, money: 0,     trl: 0 },
+  { id: '48', name: 'Jury Duty',                    hours: -40, money: 0,     trl: 0 },
+  { id: '49', name: 'Moving House',                 hours: -45, money: -500,  trl: 0 },
+  { id: '50', name: 'Health Checkup',               hours: -20, money: 0,     trl: 0 },
 
-  // Money loss (5 cards)
-  labEquipmentBreakdown: { id: 'labEquipmentBreakdown', title: 'Lab Equipment Breakdown', effect: { money: -1500 }, category: 'money' },
-  chemicalSpill:         { id: 'chemicalSpill',         title: 'Chemical Spill',          effect: { money: -1000 }, category: 'money' },
-  conferenceRegistration:{ id: 'conferenceRegistration',title: 'Conference Registration', effect: { money: -800  }, category: 'money' },
-  softwareLicense:       { id: 'softwareLicense',       title: 'Software License',        effect: { money: -500  }, category: 'money' },
-  labSupplies:           { id: 'labSupplies',           title: 'Lab Supplies',            effect: { money: -600  }, category: 'money' },
+  // Lucky Cards (#51-55)
+  { id: '51', name: 'Research Assistant Help',      hours: 30,  money: 0,     trl: 0 },
+  { id: '52', name: 'Conference Cancelled',         hours: 40,  money: 0,     trl: 0 },
+  { id: '53', name: 'Grant Approved Early',         hours: 0,   money: 2000,  trl: 0 },
+  { id: '54', name: 'Industry Contact',             hours: 0,   money: 0,     trl: 0, freeExpert: true },
+  { id: '55', name: 'Efficient Semester',           hours: 50,  money: 0,     trl: 0 },
+];
 
-  // Positive (5 cards)
-  paperAccepted:    { id: 'paperAccepted',    title: 'Paper Accepted!',    effect: { money: 2000 },            isPositive: true },
-  phdBreakthrough:  { id: 'phdBreakthrough',  title: 'PhD Breakthrough',   effect: { trl: 1 },                 isPositive: true },
-  networkingGold:   { id: 'networkingGold',   title: 'Networking Gold',    effect: { freeExpertMeeting: true }, isPositive: true },
-  teachingAward:    { id: 'teachingAward',    title: 'Teaching Award',     effect: { money: 1000, hours: 25 }, isPositive: true },
-  grantLeftover:    { id: 'grantLeftover',    title: 'Grant Leftover',     effect: { money: 3000 },            isPositive: true },
-};
+// Group labels for optgroups in the dropdown
+export const INTERRUPT_CARD_GROUPS = [
+  { label: 'Teaching & Supervision (#01-10)', ids: ['01','02','03','04','05','06','07','08','09','10'] },
+  { label: 'Research & Academic (#11-20)',    ids: ['11','12','13','14','15','16','17','18','19','20'] },
+  { label: 'Administrative (#21-30)',         ids: ['21','22','23','24','25','26','27','28','29','30'] },
+  { label: 'University Politics (#31-40)',    ids: ['31','32','33','34','35','36','37','38','39','40'] },
+  { label: 'Personal & Life (#41-50)',        ids: ['41','42','43','44','45','46','47','48','49','50'] },
+  { label: 'Lucky Cards (#51-55)',            ids: ['51','52','53','54','55'] },
+];

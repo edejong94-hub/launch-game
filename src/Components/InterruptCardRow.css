@@ -1,43 +1,70 @@
 .interrupt-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 0.75rem;
-  padding: 0.6rem 1rem;
-  background: rgba(245, 158, 11, 0.1);
-  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.9) 0%, rgba(49, 46, 129, 0.7) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 10px;
   margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 
 .interrupt-row.negative {
-  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, rgba(69, 10, 10, 0.8) 0%, rgba(127, 29, 29, 0.5) 100%);
 }
 
 .interrupt-row.positive {
-  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, rgba(6, 53, 36, 0.8) 0%, rgba(6, 78, 59, 0.5) 100%);
 }
 
 .ir-label {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  color: #c7d2fe;
   white-space: nowrap;
+  align-self: center;
+}
+
+.ir-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.ir-slot-label {
+  font-size: 0.7rem;
+  color: #818cf8;
+  font-weight: 500;
 }
 
 .ir-select {
   padding: 0.4rem 0.6rem;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(15, 10, 60, 0.7);
+  border: 1px solid rgba(99, 102, 241, 0.4);
   border-radius: 6px;
-  color: #fff;
-  font-size: 0.85rem;
-  max-width: 180px;
+  color: #e0e7ff;
+  font-size: 0.82rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.ir-select:focus {
+  outline: none;
+  border-color: rgba(129, 140, 248, 0.8);
 }
 
 .ir-impact {
   margin-left: auto;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.85rem;
-  color: #888;
+  color: #94a3b8;
+  white-space: nowrap;
+  align-self: center;
 }
 
 .ir-impact.negative {

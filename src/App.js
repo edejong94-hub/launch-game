@@ -251,12 +251,19 @@ const calculateProgress = (teamData, config) => {
   let bankTrust = 2;
   let investorAppeal = 2;
 
+  // --- HIRED PROFILE BENEFITS (persistent from previous rounds or active this round) ---
+  const completedActs = teamData.completedActivities || [];
+  const hasMarketExpert = completedActs.includes('hireMarketExpert') || !!teamData.activities?.hireMarketExpert;
+  const hasOperationsHire = completedActs.includes('hireOperations') || !!teamData.activities?.hireOperations;
+  const hasNetworking = completedActs.includes('networking') || !!teamData.activities?.networking;
+
   // --- INTERVIEWS & VALIDATION ---
   let interviewsThisRound = 0;
   let validationsThisRound = 0;
 
   if (teamData.activities?.customerInterviews) {
-    interviewsThisRound = 1 + juniorsOnTeam * 0.5;
+    const baseInterviews = 1 + juniorsOnTeam * 0.5;
+    interviewsThisRound = hasMarketExpert ? baseInterviews * 2 : baseInterviews;
   }
 
   if (teamData.activities?.customerValidation) {
@@ -382,6 +389,7 @@ const calculateProgress = (teamData, config) => {
     if (!activity) return;
 
     let timeCost = activity.costTime || 0;
+    let moneyCost = activity.costMoney || 0;
 
     if (key === "pivot" && activity.extraTimePerRound) {
       const round = teamData.round || 1;
@@ -395,14 +403,36 @@ const calculateProgress = (teamData, config) => {
       timeCost += 20;
     }
 
+    // Networking benefit: investor meeting costs 24 hrs less this round
+    if (key === "investorMeeting" && hasNetworking) {
+      timeCost = Math.max(0, timeCost - 24);
+    }
+
+    // Operations hire benefit: saves €2k on each paid activity
+    if (hasOperationsHire && moneyCost > 0) {
+      moneyCost = Math.max(0, moneyCost - 2000);
+    }
+
     totalTimeSpent += timeCost;
-    totalMoneySpent += activity.costMoney || 0;
+    totalMoneySpent += moneyCost;
     salesGrade += activity.salesGradeBonus || 0;
     networkFactor += activity.networkBonus || 0;
     marketingBonus += activity.marketingBonus || 0;
     trlBonus += activity.trlBonus || 0;
     investorAppeal += activity.investorAppealBonus || 0;
   });
+
+  // --- PERSISTENT APPEAL BONUSES from completed hires ---
+  // Only add for past rounds (current round already counted via activity loop)
+  if (completedActs.includes('hireBusinessPerson') && !teamData.activities?.hireBusinessPerson) {
+    investorAppeal += 1;
+  }
+  if (completedActs.includes('cofounderAgreement') && !teamData.activities?.cofounderAgreement) {
+    investorAppeal += 1;
+  }
+  if (completedActs.includes('incubatorApplication') && !teamData.activities?.incubatorApplication) {
+    investorAppeal += 1;
+  }
 
   // --- EMPLOYMENT STATUS INVESTOR MODIFIER ---
   const employmentModifier = getEmploymentInvestorModifier(
@@ -452,17 +482,28 @@ const calculateProgress = (teamData, config) => {
       validationsTotal >= 1;
   }
 
+  // --- INTERRUPT CARD IMPACT ---
+  // Applied here so hours bar and cash preview update live as cards are selected
+  const interrupt = teamData.interruptImpact || { hours: 0, money: 0, trl: 0 };
+  // Interrupt hours are negative (time lost) → subtract to increase totalTimeSpent
+  const adjustedTimeSpent = totalTimeSpent - (interrupt.hours || 0);
+  const adjustedDevelopmentHours = availableHours - adjustedTimeSpent;
+
   // --- CASH ---
   const startingCash = teamData.cash || config.gameInfo.startingCapital;
   const cash =
-    startingCash - totalMoneySpent + revenue + subsidy + investment + loan;
+    startingCash - totalMoneySpent + revenue + subsidy + investment + loan + (interrupt.money || 0);
+
+  const adjustedTRLFinal = Math.min(9, currentTRL + (interrupt.trl || 0));
+
+  const maxHours = getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || 3);
 
   return {
     cash,
-    totalTimeSpent,
+    totalTimeSpent: adjustedTimeSpent,
     totalMoneySpent,
     totalSalaryCost,
-    developmentHours,
+    developmentHours: adjustedDevelopmentHours,
     phaseProgress: Math.min(phaseProgress, 100),
     salesGrade,
     networkFactor,
@@ -478,14 +519,15 @@ const calculateProgress = (teamData, config) => {
     employees,
     hasSenior,
     investorEquity: (teamData.investorEquity || 0) + Number(funding.investorEquity || 0),
-    currentTRL,
+    currentTRL: adjustedTRLFinal,
     trlBonus,
     founderSalaryCost,
     employmentStatus: teamData.employmentStatus || 'university',
-    maxHoursAvailable: getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || 3),
-    hoursOverLimit: totalTimeSpent > getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || 3),
+    maxHoursAvailable: maxHours,
+    hoursOverLimit: adjustedTimeSpent > maxHours,
     employmentModifier,
     hasLabAccess: hasLabAccess(teamData.employmentStatus || 'university'),
+    interruptCards: (interrupt.cards || []),
   };
 };
 
@@ -561,6 +603,19 @@ const isActivityUnlocked = (activityKey, activity, teamData, config, currentRoun
       return {
         unlocked: false,
         reason: '🏦 Must have left university (at least part-time)',
+      };
+    }
+  }
+
+  // Co-founder agreement required before investor negotiation
+  if (activityKey === 'investorNegotiation') {
+    const hasCofounderAgreement =
+      teamData.completedActivities?.includes('cofounderAgreement') ||
+      currentRoundActivities?.cofounderAgreement;
+    if (!hasCofounderAgreement) {
+      return {
+        unlocked: false,
+        reason: 'Requires Co-founder Agreement first (investors demand it)',
       };
     }
   }
@@ -1990,6 +2045,7 @@ const startingCapital = config.gameInfo.startingCapital;
       licenceAgreement,
       hiredProfiles,
       employmentStatus,
+      interruptImpact,
     },
     config
   );
@@ -2348,7 +2404,7 @@ return () => {};
   office,
   activities,
   round: currentRound,
-  cash: progress.cash + (interruptImpact.money || 0),
+  cash: progress.cash,
   startupIdea,
   legalForm,
   employees,
@@ -2363,7 +2419,8 @@ return () => {};
   interviewCount: progress.interviewsTotal,
   validationCount: adjustedValidations,
   completedActivities: newCompletedActivities,
-  trl: Math.min(9, adjustedTRL + (interruptImpact.trl || 0)),
+  trl: adjustedTRL,
+  interruptCards: interruptImpact.cards.map(c => ({ id: c.id, name: c.name, hours: c.hours, money: c.money, trl: c.trl })),
   pivotHistory: [...(teamData.pivotHistory || []), ...pivotHistory],
   lastPivotRound: activities.pivot ? currentRound : (teamData.lastPivotRound ?? null),
 

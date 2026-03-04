@@ -21,11 +21,11 @@ employmentStatus: {
     id: 'university',
     name: 'University Employee',
     icon: '🏛️',
-    hoursPerRound: 200,
+    hoursPerRound: 500,
     founderSalaryCost: 0,
     description: 'Still employed at university with teaching/research obligations',
     benefits: ['Lab access', 'Grant eligible (NWO)', 'Job security', 'University resources'],
-    drawbacks: ['Limited time (200 hrs)', 'TTO oversight', 'Teaching obligations'],
+    drawbacks: ['Limited time (500 hrs)', 'TTO oversight', 'Teaching obligations'],
     labAccess: true,
     grantEligible: true,
     investorModifier: 0, // Neutral in rounds 1-2
@@ -35,10 +35,10 @@ employmentStatus: {
     id: 'parttime',
     name: 'Part-time (Negotiated)',
     icon: '⚖️',
-    hoursPerRound: 600,
+    hoursPerRound: 750,
     founderSalaryCost: 6000,
     description: 'Reduced university role, negotiated arrangement',
-    benefits: ['Lab access', 'Grant eligible', 'More time (600 hrs)'],
+    benefits: ['Lab access', 'Grant eligible', 'More time (750 hrs)'],
     drawbacks: ['€6,000/founder salary cost', 'Complex arrangement'],
     labAccess: true,
     grantEligible: true,
@@ -49,38 +49,16 @@ employmentStatus: {
     id: 'fulltime',
     name: 'Full-time Founder',
     icon: '🚀',
-    hoursPerRound: 800,
+    hoursPerRound: 1000,
     founderSalaryCost: 12000,
     description: 'Left university, full focus on startup',
-    benefits: ['Full time (800 hrs)', 'Independence', 'Investor confidence'],
+    benefits: ['Full time (1000 hrs)', 'Independence', 'Investor confidence'],
     drawbacks: ['€12,000/founder salary', 'No lab access', 'No academic grants', 'No safety net'],
     labAccess: false,
     grantEligible: false,
     investorModifier: 1, // Positive - shows commitment
     requiresActivity: 'universityExit',
   },
-},
-
-// ============================================
-// FOUNDER HOURS SCALE - Diminishing Returns
-// Coordination overhead reduces efficiency with larger teams
-// ============================================
-founderHoursScale: {
-  // Multiplier for each founder position (1st, 2nd, 3rd, etc.)
-  // Represents diminishing returns due to coordination overhead
-  multipliers: [1.0, 0.9, 0.7, 0.5, 0.3],
-
-  // Base hours per employment status (for 1st founder)
-  baseHours: {
-    university: 200,
-    parttime: 600,
-    fulltime: 800,
-  },
-
-  // Pre-calculated team totals for reference:
-  // University: 2=380, 3=520, 4=620, 5=680
-  // Part-time:  2=1140, 3=1560, 4=1860, 5=2040
-  // Full-time:  2=1520, 3=2080, 4=2480, 5=2720
 },
 
 // ============================================
@@ -245,16 +223,14 @@ academicOnlyGrants: ['grantTakeoff'], // NWO Take-off requires university
     },
     customer: {
       id: "customer",
-      name: "Business Developer",
+      name: "Customer / Market Expert",
       icon: "🎯",
-      description: "Customer discovery, market validation, LOIs",
-      keyTension: "Building without validation is the #1 startup killer",
-      sessionNote: "Played by a business developer — no domain expertise needed. They guide the conversation and offer contracts based on evidence quality.",
+      description: "Customer interviews, validation, LOIs",
+      keyTension: "Takes time away from development",
       activities: ["customerInterviews", "customerValidation"],
       contracts: [
-        { id: "interviewLog", name: "Interview Log", description: "Given after first meeting — team fills it in after doing real interviews" },
-        { id: "loi", name: "Letter of Intent (LOI)", description: "Customer commitment — only after 2+ quality interviews" },
-        { id: "pilotAgreementCustomer", name: "Pilot Agreement (Customer)", description: "Real customer test — advanced, Round 3–4 only" },
+        { id: "interviewLog", name: "Interview Log", description: "Record of customer conversations" },
+        { id: "loi", name: "Letter of Intent", description: "Customer commitment document" },
       ],
     },
   },
@@ -363,12 +339,12 @@ academicOnlyGrants: ['grantTakeoff'], // NWO Take-off requires university
       trigger: "activity",
       activity: "customerValidation",
       title: "🎯 Customer Validation Achieved!",
-      message: "A customer has signed a Letter of Intent! The Business Developer confirmed your interviews were solid enough to earn real commitment. This is a major milestone.",
+      message: "A customer has signed a Letter of Intent or agreed to a pilot! This is a major milestone - proof that someone will pay for your technology.",
       severity: "success",
       consequences: [
         "Investor appeal significantly increased",
-        "You can now pursue pilot projects with the Industry Partner",
-        "Use this evidence in grant applications",
+        "You can now pursue pilot projects",
+        "Use this in grant applications",
       ],
     },
     patentFiled: {
@@ -386,14 +362,13 @@ academicOnlyGrants: ['grantTakeoff'], // NWO Take-off requires university
     incubatorAccepted: {
       trigger: "activity",
       activity: "incubatorApplication",
-      title: "🏢 Incubator Accepted!",
-      message: "Congratulations — you've been accepted into the incubator program! You now have access to office space, mentoring, and a warm investor network. Investors see this as external validation of your startup.",
-      severity: "success",
+      title: "🏢 Incubator Application Submitted",
+      message: "You've applied to join an incubator program. If accepted, you'll get office space, mentoring, and access to their network - but they'll want equity.",
+      severity: "info",
       consequences: [
-        "+1 Investor Appeal (external validation)",
         "Incubator office space now available",
-        "Expect to give 2-8% equity in exchange",
-        "Mentoring and warm investor introductions included",
+        "Expect to give 2-8% equity",
+        "Valuable mentoring and connections",
       ],
     },
     pilotProjectStart: {
@@ -922,7 +897,15 @@ lowRunwayWarning: {
             description: 'Team has zero business skills',
             type: 'negative',
             roast: "Amazing tech that nobody knows how to sell.",
-
+          },
+          {
+            id: 'meetingAvoider',
+            name: '😰 Meeting Avoider',
+            points: -1,
+            condition: 'fewExpertMeetings',
+            description: 'Used less than half your stickers',
+            type: 'negative',
+            roast: "The experts were lonely. Thanks.",
           },
           {
             id: 'speedBurn',
@@ -1042,11 +1025,11 @@ lowRunwayWarning: {
       fewInterviews: (data) => (data.interviewCount || 0) < 3,
     },
     rankings: {
-      excellent: { min: 80, label: "🌟 Excellent", color: "#22c55e", description: "Ready for Series A!" },
-      strong: { min: 65, label: "💪 Strong", color: "#3b82f6", description: "On track for success" },
-      good: { min: 50, label: "👍 Good", color: "#f59e0b", description: "Solid foundation" },
-      developing: { min: 35, label: "📈 Developing", color: "#f97316", description: "More work needed" },
-      struggling: { min: 0, label: "⚠️ Struggling", color: "#ef4444", description: "Major challenges ahead" },
+      excellent: { min: 80, label: "🌟 Excellent", description: "Ready for Series A!" },
+      strong: { min: 65, label: "💪 Strong", description: "On track for success" },
+      good: { min: 50, label: "👍 Good", description: "Solid foundation" },
+      developing: { min: 35, label: "📈 Developing", description: "More work needed" },
+      struggling: { min: 0, label: "⚠️ Struggling", description: "Major challenges ahead" },
     },
   },
 
@@ -1179,29 +1162,29 @@ lowRunwayWarning: {
     // === CUSTOMER DISCOVERY ===
     customerInterviews: {
       name: "Customer Discovery Interviews",
-      costTime: 48,
+      costTime: 32,
       costMoney: 0,
+      stickerCost: 1,
       category: "discovery",
-      description: "Talk to real potential customers. Requires Interview Log from Business Developer.",
+      description: "Talk to potential customers. Essential for validation.",
       requiresContract: "interviewLog",
       expert: "customer",
-      hint: "Visit the Business Developer first — they will give you the Interview Log and help you define who to talk to.",
     },
     customerValidation: {
-      name: "Customer Validation (LOI)",
-      costTime: 72,
+      name: "Customer Validation (LOI/Pilot)",
+      costTime: 48,
       costMoney: 0,
+      stickerCost: 1,
       category: "discovery",
-      description: "Get a Letter of Intent from a real customer. Requires 2+ interviews. Business Developer confirms evidence quality.",
+      description: "Get letter of intent or pilot agreement.",
       requiresInterviews: 2,
       requiresContract: "loi",
       expert: "customer",
       triggersEvent: "customerValidationSuccess",
-      hint: "The Business Developer will only give an LOI after 2+ solid interviews. Come with evidence, not enthusiasm.",
     },
     industryExploration: {
       name: "Industry Partner Exploration",
-      costTime: 48,
+      costTime: 32,
       costMoney: 1000,
       stickerCost: 1,
       category: "discovery",
@@ -1213,7 +1196,7 @@ lowRunwayWarning: {
     // === UNIVERSITY & TTO ===
     ttoDiscussion: {
       name: "TTO: Initial Discussion",
-      costTime: 72,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "tto",
@@ -1225,7 +1208,7 @@ lowRunwayWarning: {
     },
     ttoNegotiation: {
       name: "TTO: Terms Negotiation",
-      costTime: 72,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "tto",
@@ -1235,7 +1218,7 @@ lowRunwayWarning: {
     },
     licenceNegotiation: {
       name: "Licence Agreement",
-      costTime: 96,
+      costTime: 64,
       costMoney: 2000,
       stickerCost: 2,
       category: "tto",
@@ -1247,7 +1230,7 @@ lowRunwayWarning: {
     },
     labNegotiation: {
       name: "Lab Access Negotiation",
-      costTime: 48,
+      costTime: 32,
       costMoney: 0,
       stickerCost: 1,
       category: "tto",
@@ -1256,7 +1239,7 @@ lowRunwayWarning: {
     },
     universityExit: {
       name: "University Exit Discussion",
-      costTime: 72,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "tto",
@@ -1267,7 +1250,7 @@ lowRunwayWarning: {
     // === INTELLECTUAL PROPERTY ===
     patentSearch: {
       name: "Patent: Freedom to Operate",
-      costTime: 48,
+      costTime: 32,
       costMoney: 2000,
       stickerCost: 1,
       category: "ip",
@@ -1278,7 +1261,7 @@ lowRunwayWarning: {
     },
     patentFiling: {
       name: "Patent: Professional Filing",
-      costTime: 120,
+      costTime: 80,
       costMoney: 15000,
       stickerCost: 2,
       category: "ip",
@@ -1291,7 +1274,7 @@ lowRunwayWarning: {
     },
     knowHowProtection: {
       name: "Know-How Protection",
-      costTime: 48,
+      costTime: 32,
       costMoney: 2500,
       stickerCost: 1,
       category: "ip",
@@ -1307,7 +1290,7 @@ lowRunwayWarning: {
     // === FUNDING & GRANTS ===
     grantTakeoff: {
       name: "NWO Take-off Application",
-      costTime: 96,
+      costTime: 64,
       costMoney: 0,
       stickerCost: 2,
       category: "funding",
@@ -1318,7 +1301,7 @@ lowRunwayWarning: {
     },
     grantWBSO: {
       name: "WBSO Registration",
-      costTime: 48,
+      costTime: 32,
       costMoney: 0,
       stickerCost: 1,
       category: "funding",
@@ -1328,7 +1311,7 @@ lowRunwayWarning: {
     },
     grantRegional: {
       name: "Regional Fund (ROM/MIT)",
-      costTime: 72,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 1,
       category: "funding",
@@ -1338,7 +1321,7 @@ lowRunwayWarning: {
     },
     investorMeeting: {
       name: "Investor Meeting",
-      costTime: 48,
+      costTime: 32,
       costMoney: 0,
       stickerCost: 1,
       category: "funding",
@@ -1350,7 +1333,7 @@ lowRunwayWarning: {
     },
     investorNegotiation: {
       name: "Term Sheet Negotiation",
-      costTime: 72,
+      costTime: 48,
       costMoney: 5000,
       stickerCost: 2,
       category: "funding",
@@ -1363,7 +1346,7 @@ lowRunwayWarning: {
     // === BANK & LOANS (NEW) ===
     bankMeeting: {
       name: "Bank: Initial Meeting",
-      costTime: 48,
+      costTime: 32,
       costMoney: 0,
       stickerCost: 1,
       category: "banking",
@@ -1375,7 +1358,7 @@ lowRunwayWarning: {
     },
     loanApplication: {
       name: "Loan Application",
-      costTime: 72,
+      costTime: 48,
       costMoney: 500,
       stickerCost: 1,
       category: "banking",
@@ -1387,7 +1370,7 @@ lowRunwayWarning: {
     },
     raboInnovatielening: {
       name: "Rabo Innovatielening",
-      costTime: 96,
+      costTime: 64,
       costMoney: 1000,
       stickerCost: 2,
       category: "banking",
@@ -1428,65 +1411,56 @@ lowRunwayWarning: {
     // === TEAM & HIRING ===
     cofounderAgreement: {
       name: "Co-founder Agreement",
-      costTime: 80,
+      costTime: 32,
       costMoney: 2000,
       stickerCost: 0,
       category: "team",
-      description: "Equity split, vesting, roles. +1 Investor Appeal. Required before investor negotiation.",
-      investorAppealBonus: 1,
-      requiredFor: ["investorNegotiation"],
+      description: "Equity split, vesting, roles. Essential before investment.",
     },
     hireBusinessPerson: {
       name: "Hire: Business/Sales Expert",
-      costTime: 40,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 0,
       category: "team",
-      description: "Add business skills. +1 Investor Appeal. Customer activities 20% faster. €25k/round salary.",
+      description: "Add business skills to your team. Helps with customers and fundraising.",
       addsProfile: "business",
       salaryOngoing: true,
-      investorAppealBonus: 1,
-      activityTimeModifier: {
-        activities: ["customerInterviews", "customerValidation", "industryExploration"],
-        modifier: 0.8,
-      },
     },
     hireMarketExpert: {
       name: "Hire: Market Expert",
-      costTime: 40,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 0,
       category: "team",
-      description: "Add market knowledge. Doubles customer interview output. €25k/round salary.",
+      description: "Add market knowledge. Helps with customer development.",
       addsProfile: "market",
       salaryOngoing: true,
-      interviewMultiplier: 2,
     },
     hireOperations: {
       name: "Hire: Operations/Finance",
-      costTime: 40,
+      costTime: 48,
       costMoney: 0,
       stickerCost: 0,
       category: "team",
-      description: "Add operational expertise. Saves €2k/round on activity costs. €25k/round salary.",
+      description: "Add operational expertise. Helps with scaling.",
       addsProfile: "operations",
       salaryOngoing: true,
-      activityCostReduction: 2000,
     },
     networking: {
       name: "Conference / Demo Day",
-      costTime: 100,
+      costTime: 48,
       costMoney: 1000,
       stickerCost: 0,
       category: "team",
-      description: "Build network. Investor meetings cost 24 hrs less this round.",
-      nextActivityDiscount: { activity: "investorMeeting", hours: 24 },
+      description: "Build network, visibility, find partners and advisors.",
+      networkBonus: 1,
     },
 
     // === PRODUCT DEVELOPMENT ===
     prototypeDevelopment: {
       name: "Prototype Development",
-      costTime: 250,
+      costTime: 96,
       costMoney: 5000,
       stickerCost: 0,
       category: "development",
@@ -1495,7 +1469,7 @@ lowRunwayWarning: {
     },
     pilotProject: {
       name: "Pilot Project",
-      costTime: 120,
+      costTime: 80,
       costMoney: 10000,
       stickerCost: 2,
       category: "development",
@@ -1508,12 +1482,11 @@ lowRunwayWarning: {
     },
     incubatorApplication: {
       name: "Incubator Application",
-      costTime: 48,
+      costTime: 32,
       costMoney: 0,
       stickerCost: 1,
       category: "development",
-      description: "Apply for startup program. +1 Investor Appeal. Unlocks incubator office space.",
-      investorAppealBonus: 1,
+      description: "Apply for startup program. Unlocks incubator office space.",
       unlocks: ["incubatorOffice"],
       requiresContract: "incubatorApp",
       expert: "incubator",
@@ -1525,7 +1498,7 @@ lowRunwayWarning: {
     pivot: {
       name: "🔄 Pivot Business Direction",
       stickerCost: 0,  // Internal decision, no expert needed
-      costTime: 350,   // Very time intensive - rebuilding your approach!
+      costTime: 200,   // Very time intensive - rebuilding your approach!
       costMoney: 5000, // Some costs for new materials, prototypes, etc.
       category: 'strategy',
       description: "Major change in business direction based on market feedback",
@@ -1618,95 +1591,6 @@ lowRunwayWarning: {
     equityLabel: "Founder Equity",
     fundingLabel: "Funding & Grants",
   },
-};
-
-// ============================================
-// SHARED RESEARCH SCORING FUNCTION
-// Single source of truth for research mode scoring.
-// Used by LiveDashboard, EndGameScoreBreakdown, and any other
-// component that needs to calculate a research team's score.
-// ============================================
-export const calculateResearchScore = (teamData = {}, progress = {}) => {
-  const config = RESEARCH_CONFIG.endGameScoring;
-
-  // Extract all metric values from teamData + progress
-  const values = {
-    cash: progress.cash || teamData.cash || 0,
-    revenue: teamData.funding?.revenue || teamData.totalRevenue || 0,
-    trl: progress.currentTRL || teamData.trl || 3,
-    patents: (teamData.completedActivities || []).filter(a =>
-      ['patentFiling', 'knowHowProtection'].includes(a)
-    ).length,
-    validations: progress.validationsTotal || teamData.validationCount || 0,
-    interviews: progress.interviewsTotal || teamData.interviewCount || 0,
-    equity: 100 - (progress.investorEquity || teamData.investorEquity || 0) - (teamData.licenceAgreement === 'equity' ? 10 : 0),
-    legalForm: teamData.legalForm && teamData.legalForm !== 'none' ? 1 : 0,
-  };
-
-  // Calculate metric category scores
-  const metricCategories = config.categories.filter(c => c.metrics);
-  const categoryScores = metricCategories.map(category => {
-    const metricScores = category.metrics.map(metric => {
-      const value = values[metric.id] || 0;
-      const ratio = Math.min(1, value / metric.target);
-      const score = ratio * metric.weight;
-      return { ...metric, value, score, percentage: Math.min(100, ratio * 100) };
-    });
-    const categoryTotal = metricScores.reduce((sum, m) => sum + m.score, 0);
-    return { ...category, metrics: metricScores, score: categoryTotal };
-  });
-
-  const baseScore = categoryScores.reduce((sum, c) => sum + c.score, 0);
-
-  // Evaluate achievements
-  const bonusCategory = config.categories.find(c => c.bonuses);
-  const achievementConditions = config.achievementConditions || {};
-  const achievements = [];
-
-  if (bonusCategory) {
-    // Merged data object for condition functions
-    const conditionData = {
-      ...teamData,
-      cash: values.cash,
-      validationCount: values.validations,
-      interviewCount: values.interviews,
-    };
-    bonusCategory.bonuses.forEach(bonus => {
-      const conditionFn = achievementConditions[bonus.condition];
-      if (conditionFn && conditionFn(conditionData)) {
-        achievements.push(bonus);
-      }
-    });
-  }
-
-  // Sort: positive first, then negative, by absolute points
-  achievements.sort((a, b) => {
-    if (a.points >= 0 && b.points < 0) return -1;
-    if (a.points < 0 && b.points >= 0) return 1;
-    return Math.abs(b.points) - Math.abs(a.points);
-  });
-
-  const bonusPoints = achievements.reduce((sum, a) => sum + a.points, 0);
-  const totalScore = Math.round(baseScore + bonusPoints);
-
-  // Determine ranking
-  const { rankings } = config;
-  let ranking;
-  if (totalScore >= rankings.excellent.min) ranking = rankings.excellent;
-  else if (totalScore >= rankings.strong.min) ranking = rankings.strong;
-  else if (totalScore >= rankings.good.min) ranking = rankings.good;
-  else if (totalScore >= rankings.developing.min) ranking = rankings.developing;
-  else ranking = rankings.struggling;
-
-  return {
-    totalScore,
-    baseScore,
-    bonusPoints,
-    categoryScores,
-    achievements,
-    values,
-    ranking,
-  };
 };
 
 export default RESEARCH_CONFIG;

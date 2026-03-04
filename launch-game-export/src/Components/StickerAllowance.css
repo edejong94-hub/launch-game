@@ -1,0 +1,286 @@
+/* Sticker Allowance Component Styles */
+.sticker-allowance {
+  background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 100%);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.sticker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.sticker-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #e5e5e5;
+}
+
+.sticker-icon {
+  font-size: 1.25rem;
+}
+
+.sticker-count-badge {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.sticker-mini {
+  font-size: 1rem;
+}
+
+.sticker-subtitle {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0 0 1.25rem 0;
+}
+
+/* Sticker Display */
+.sticker-display {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.sticker-visual {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sticker-dots-large {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.sticker-dot-large {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1));
+  border: 2px solid #6366f1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+  animation: pulse-sticker 2s ease-in-out infinite;
+}
+
+.sticker-dot-large:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.sticker-dot-large:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.sticker-dot-large:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+.sticker-dot-large:nth-child(4) {
+  animation-delay: 0.9s;
+}
+
+.sticker-dot-large:nth-child(5) {
+  animation-delay: 1.2s;
+}
+
+@keyframes pulse-sticker {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+.sticker-label {
+  text-align: right;
+}
+
+.count-number {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #c1fe00;
+  line-height: 1;
+}
+
+.count-text {
+  font-size: 0.875rem;
+  color: #64748b;
+  text-transform: lowercase;
+}
+
+/* Instructions */
+.sticker-instructions {
+  margin-bottom: 1.25rem;
+}
+
+.instructions-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  margin-bottom: 0.5rem;
+}
+
+.instruction-number {
+  width: 22px;
+  height: 22px;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #a5b4fc;
+  flex-shrink: 0;
+}
+
+/* Interrupt Reminder */
+.interrupt-reminder {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.interrupt-reminder-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.interrupt-icon {
+  font-size: 1.25rem;
+}
+
+.interrupt-reminder-header span:last-child {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #c4b5fd;
+}
+
+.interrupt-reminder-text {
+  font-size: 0.8125rem;
+  color: #c4b5fd;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Legend */
+.sticker-legend {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.legend-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.legend-dots {
+  font-size: 0.875rem;
+  font-weight: bold;
+  width: 24px;
+  letter-spacing: -2px;
+}
+
+.legend-item.intensive .legend-dots {
+  color: #f59e0b;
+}
+
+.legend-item.standard .legend-dots {
+  color: #6366f1;
+}
+
+.legend-text {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8125rem;
+}
+
+.legend-text strong {
+  color: #e5e5e5;
+  font-weight: 600;
+}
+
+.legend-text span {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.legend-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.note-icon {
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .sticker-visual {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .sticker-label {
+    text-align: center;
+  }
+
+  .sticker-dots-large {
+    justify-content: center;
+  }
+}

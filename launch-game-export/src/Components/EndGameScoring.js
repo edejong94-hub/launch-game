@@ -1,35 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { calculateResearchScore } from '../Configs/research-config';
+import { calculateTeamScore, rankTeams, getPerformanceCategory, scoringConfig } from '../Configs/scoring-configs';
 import './EndGameScoring.css';
 
 const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
   const [scoreData, setScoreData] = useState(null);
   const [rankedTeams, setRankedTeams] = useState([]);
+  const [showComparison, setShowComparison] = useState(false);
   const [selectedTab, setSelectedTab] = useState('summary');
 
   useEffect(() => {
     if (team) {
-      const data = calculateResearchScore(team, team.progress || {});
+      const data = calculateTeamScore(team, mode);
       setScoreData(data);
     }
 
     if (allTeams && allTeams.length > 0) {
-      const scored = allTeams.map(t => ({
-        ...t,
-        scoreData: calculateResearchScore(t, t.progress || {}),
-      }));
-      scored.sort((a, b) => (b.scoreData?.totalScore || 0) - (a.scoreData?.totalScore || 0));
-      scored.forEach((t, i) => { t.rank = i + 1; });
-      setRankedTeams(scored);
+      const ranked = rankTeams(allTeams, mode);
+      setRankedTeams(ranked);
     }
   }, [team, allTeams, mode]);
 
   if (!scoreData) return null;
 
-  const { ranking } = scoreData;
+  const performance = getPerformanceCategory(scoreData.totalScore);
   const teamRank = rankedTeams.find(t => t.id === team.id)?.rank || 0;
-  const allMetrics = scoreData.categoryScores.flatMap(c => c.metrics);
-  const positiveAchievements = scoreData.achievements.filter(a => a.points > 0);
+  const config = scoringConfig[mode];
 
   const renderSummaryTab = () => (
     <div className="summary-tab">
@@ -42,17 +37,17 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
             </>
           )}
         </div>
-
-        <div className="score-circle" style={{ borderColor: ranking.color }}>
-          <div className="score-value" style={{ color: ranking.color }}>
+        
+        <div className="score-circle" style={{ borderColor: performance.color }}>
+          <div className="score-value" style={{ color: performance.color }}>
             {scoreData.totalScore}
           </div>
           <div className="score-label">Final Score</div>
         </div>
 
-        <div className="performance-rating" style={{ background: ranking.color }}>
-          <div className="rating-level">{ranking.label}</div>
-          <div className="rating-desc">{ranking.description}</div>
+        <div className="performance-rating" style={{ background: performance.color }}>
+          <div className="rating-level">{performance.level}</div>
+          <div className="rating-desc">{performance.description}</div>
         </div>
       </div>
 
@@ -63,9 +58,9 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
             <div
               className="base-score-segment"
               style={{ width: `${(scoreData.baseScore / (scoreData.totalScore || 1)) * 100}%` }}
-              title={`Base Score: ${Math.round(scoreData.baseScore)}`}
+              title={`Base Score: ${scoreData.baseScore}`}
             >
-              <span>Base: {Math.round(scoreData.baseScore)}</span>
+              <span>Base: {scoreData.baseScore}</span>
             </div>
             {scoreData.bonusPoints > 0 && (
               <div
@@ -80,11 +75,11 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
         </div>
       </div>
 
-      {positiveAchievements.length > 0 && (
+      {scoreData.earnedBonuses?.length > 0 && (
         <div className="achievements-section">
           <h3>🏆 Achievements Unlocked</h3>
           <div className="achievement-grid">
-            {positiveAchievements.map((bonus, index) => (
+            {scoreData.earnedBonuses.map((bonus, index) => (
               <div key={index} className="achievement-card">
                 <div className="achievement-icon">✓</div>
                 <div className="achievement-content">
@@ -104,22 +99,41 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
           <div className="highlight-card">
             <div className="highlight-icon">💰</div>
             <div className="highlight-label">Cash Position</div>
-            <div className="highlight-value">€{(scoreData.values.cash || 0).toLocaleString()}</div>
+            <div className="highlight-value">${(team.cash || 0).toLocaleString()}</div>
           </div>
-          <div className="highlight-card">
-            <div className="highlight-icon">🔬</div>
-            <div className="highlight-label">TRL Level</div>
-            <div className="highlight-value">TRL {scoreData.values.trl}</div>
-          </div>
-          <div className="highlight-card">
-            <div className="highlight-icon">🎯</div>
-            <div className="highlight-label">Validations</div>
-            <div className="highlight-value">{scoreData.values.validations}</div>
-          </div>
+          
+          {mode === 'startup' ? (
+            <>
+              <div className="highlight-card">
+                <div className="highlight-icon">🔧</div>
+                <div className="highlight-label">Development</div>
+                <div className="highlight-value">{team.developmentHours || 0} hrs</div>
+              </div>
+              <div className="highlight-card">
+                <div className="highlight-icon">👥</div>
+                <div className="highlight-label">Customers</div>
+                <div className="highlight-value">{team.customersAcquired || 0}</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="highlight-card">
+                <div className="highlight-icon">🔬</div>
+                <div className="highlight-label">Technology Level</div>
+                <div className="highlight-value">TRL {team.trl || 1}</div>
+              </div>
+              <div className="highlight-card">
+                <div className="highlight-icon">📜</div>
+                <div className="highlight-label">Patents</div>
+                <div className="highlight-value">{team.patents || 0}</div>
+              </div>
+            </>
+          )}
+          
           <div className="highlight-card">
             <div className="highlight-icon">📊</div>
             <div className="highlight-label">Equity Retained</div>
-            <div className="highlight-value">{Math.round(scoreData.values.equity)}%</div>
+            <div className="highlight-value">{team.equityRetained || 100}%</div>
           </div>
         </div>
       </div>
@@ -129,35 +143,34 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
   const renderMetricsTab = () => (
     <div className="metrics-tab">
       <h3>Detailed Metric Analysis</h3>
-
+      
       <div className="metric-cards">
-        {allMetrics.map((metric) => {
-          const percentile = rankedTeams.length > 0
-            ? calculatePercentile(metric.id, metric.percentage, rankedTeams)
-            : 50;
-
+        {Object.entries(scoreData.metricScores || {}).map(([id, metric]) => {
+          const percentile = rankedTeams.length > 0 ? 
+            calculatePercentile(team, id, rankedTeams) : 50;
+          
           return (
-            <div key={metric.id} className="detailed-metric-card">
+            <div key={id} className="detailed-metric-card">
               <div className="metric-header">
                 <div>
                   <div className="metric-title">{metric.name}</div>
-                  <div className="metric-subtitle">{metric.value}</div>
+                  <div className="metric-subtitle">{metric.actualValue}</div>
                 </div>
                 <div className="metric-weight-badge">
-                  {metric.weight} pts max
+                  {Math.round(metric.weight * 100)}% weight
                 </div>
               </div>
 
               <div className="metric-progress">
                 <div className="progress-bar">
-                  <div
+                  <div 
                     className="progress-fill"
-                    style={{ width: `${metric.percentage}%` }}
+                    style={{ width: `${metric.rawValue}%` }}
                   ></div>
                 </div>
                 <div className="progress-label">
-                  <span>Progress: {Math.round(metric.percentage)}/100</span>
-                  <span>Earned: {Math.round(metric.score)} pts</span>
+                  <span>Score: {Math.round(metric.rawValue)}/100</span>
+                  <span>Contribution: {Math.round(metric.weightedScore)} pts</span>
                 </div>
               </div>
 
@@ -177,6 +190,7 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
         <h3>Performance Profile</h3>
         <div className="radar-chart-placeholder">
           <svg viewBox="0 0 200 200" className="radar-svg">
+            {/* Draw pentagon background */}
             <polygon
               points="100,20 180,70 155,160 45,160 20,70"
               fill="#f3f4f6"
@@ -189,23 +203,27 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
               stroke="#d1d5db"
               strokeWidth="1"
             />
-            {allMetrics.slice(0, 5).map((metric, index) => {
+            
+            {/* Draw actual performance */}
+            {Object.entries(scoreData.metricScores).slice(0, 5).map(([id, metric], index) => {
               const angle = (index * 72 - 90) * Math.PI / 180;
-              const radius = (metric.percentage / 100) * 80;
+              const radius = (metric.rawValue / 100) * 80;
               const x = 100 + radius * Math.cos(angle);
               const y = 100 + radius * Math.sin(angle);
-              return <circle key={metric.id} cx={x} cy={y} r="4" fill="#667eea" />;
+              return <circle key={id} cx={x} cy={y} r="4" fill="#667eea" />;
             })}
-            {allMetrics.slice(0, 5).map((metric, index) => {
+            
+            {/* Labels */}
+            {Object.entries(scoreData.metricScores).slice(0, 5).map(([id, metric], index) => {
               const angle = (index * 72 - 90) * Math.PI / 180;
               const labelRadius = 95;
               const x = 100 + labelRadius * Math.cos(angle);
               const y = 100 + labelRadius * Math.sin(angle);
               return (
-                <text
-                  key={`label-${metric.id}`}
-                  x={x}
-                  y={y}
+                <text 
+                  key={`label-${id}`}
+                  x={x} 
+                  y={y} 
                   textAnchor="middle"
                   fontSize="10"
                   fill="#374151"
@@ -246,9 +264,9 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
             <tbody>
               {rankedTeams.map((rankedTeam) => {
                 const isCurrentTeam = rankedTeam.id === team.id;
-                const teamRanking = rankedTeam.scoreData?.ranking;
-                const topMetrics = getTopMetrics(rankedTeam.scoreData?.categoryScores);
-
+                const teamPerf = getPerformanceCategory(rankedTeam.scoreData?.totalScore || 0);
+                const topMetrics = getTopMetrics(rankedTeam.scoreData?.metricScores);
+                
                 return (
                   <tr key={rankedTeam.id} className={isCurrentTeam ? 'current-team' : ''}>
                     <td className="rank-cell">
@@ -264,14 +282,12 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
                       <strong>{rankedTeam.scoreData?.totalScore || 0}</strong>
                     </td>
                     <td>
-                      {teamRanking && (
-                        <div
-                          className="performance-pill"
-                          style={{ backgroundColor: teamRanking.color }}
-                        >
-                          {teamRanking.label}
-                        </div>
-                      )}
+                      <div 
+                        className="performance-pill"
+                        style={{ backgroundColor: teamPerf.color }}
+                      >
+                        {teamPerf.level}
+                      </div>
                     </td>
                     <td className="strengths-cell">
                       {topMetrics.join(', ')}
@@ -286,20 +302,23 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
         <div className="score-distribution">
           <h3>Score Distribution</h3>
           <div className="distribution-chart">
-            {rankedTeams.map((rankedTeam) => {
+            {rankedTeams.map((rankedTeam, index) => {
               const isCurrentTeam = rankedTeam.id === team.id;
               const score = rankedTeam.scoreData?.totalScore || 0;
               const maxScore = Math.max(...rankedTeams.map(t => t.scoreData?.totalScore || 0));
-              const barWidth = maxScore > 0 ? (score / maxScore) * 100 : 0;
-
+              const barWidth = (score / maxScore) * 100;
+              
               return (
-                <div
-                  key={rankedTeam.id}
+                <div 
+                  key={rankedTeam.id} 
                   className={`distribution-bar ${isCurrentTeam ? 'current' : ''}`}
                 >
                   <div className="bar-label">{rankedTeam.teamName}</div>
                   <div className="bar-container">
-                    <div className="bar-fill" style={{ width: `${barWidth}%` }}></div>
+                    <div 
+                      className="bar-fill"
+                      style={{ width: `${barWidth}%` }}
+                    ></div>
                   </div>
                   <div className="bar-value">{score}</div>
                 </div>
@@ -323,20 +342,20 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
         </div>
 
         <div className="tab-navigation">
-          <button
+          <button 
             className={selectedTab === 'summary' ? 'active' : ''}
             onClick={() => setSelectedTab('summary')}
           >
             Summary
           </button>
-          <button
+          <button 
             className={selectedTab === 'metrics' ? 'active' : ''}
             onClick={() => setSelectedTab('metrics')}
           >
             Detailed Metrics
           </button>
           {rankedTeams.length > 1 && (
-            <button
+            <button 
               className={selectedTab === 'comparison' ? 'active' : ''}
               onClick={() => setSelectedTab('comparison')}
             >
@@ -364,22 +383,24 @@ const EndGameScoring = ({ team, allTeams, mode, onClose, onExportReport }) => {
   );
 };
 
-function calculatePercentile(metricId, myPercentage, rankedTeams) {
-  const scores = rankedTeams.map(t => {
-    const metrics = t.scoreData?.categoryScores?.flatMap(c => c.metrics) || [];
-    return metrics.find(m => m.id === metricId)?.percentage || 0;
-  });
-  const lowerScores = scores.filter(s => s < myPercentage).length;
+// Helper function to calculate percentile
+function calculatePercentile(team, metricId, rankedTeams) {
+  const teamScore = team.scoreData?.metricScores[metricId]?.rawValue || 0;
+  const scores = rankedTeams.map(t => t.scoreData?.metricScores[metricId]?.rawValue || 0);
+  const lowerScores = scores.filter(s => s < teamScore).length;
   return Math.round((lowerScores / scores.length) * 100);
 }
 
-function getTopMetrics(categoryScores) {
-  if (!categoryScores) return [];
-  return categoryScores
-    .flatMap(c => c.metrics)
-    .sort((a, b) => b.percentage - a.percentage)
+// Helper function to get top performing metrics
+function getTopMetrics(metricScores) {
+  if (!metricScores) return [];
+  
+  const metrics = Object.entries(metricScores)
+    .sort((a, b) => b[1].rawValue - a[1].rawValue)
     .slice(0, 2)
-    .map(m => m.name.split(' ')[0]);
+    .map(([id, metric]) => metric.name);
+  
+  return metrics;
 }
 
 export default EndGameScoring;

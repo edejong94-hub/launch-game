@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { calculateResearchScore } from '../Configs/research-config';
+import { calculateTeamScore, getPerformanceCategory } from '../Configs/scoring-configs';
 import './LiveScoreboard.css';
 
 const LiveScoreboard = ({ team, mode, isMinimized = false, onToggle }) => {
@@ -8,25 +8,23 @@ const LiveScoreboard = ({ team, mode, isMinimized = false, onToggle }) => {
 
   useEffect(() => {
     if (team) {
-      const data = calculateResearchScore(team, team.progress || {});
+      const data = calculateTeamScore(team, mode);
       setScoreData(data);
     }
   }, [team, mode]);
 
   if (!scoreData) return null;
 
-  const { ranking } = scoreData;
-  const allMetrics = scoreData.categoryScores.flatMap(c => c.metrics);
-  const positiveAchievements = scoreData.achievements.filter(a => a.points > 0);
+  const performance = getPerformanceCategory(scoreData.totalScore);
 
   if (isMinimized) {
     return (
       <div className="live-scoreboard minimized" onClick={onToggle}>
-        <div className="mini-score" style={{ color: ranking.color }}>
+        <div className="mini-score" style={{ color: performance.color }}>
           <span className="mini-label">Score</span>
           <span className="mini-value">{scoreData.totalScore}</span>
         </div>
-        <div className="mini-indicator" style={{ background: ranking.color }}></div>
+        <div className="mini-indicator" style={{ background: performance.color }}></div>
       </div>
     );
   }
@@ -43,11 +41,11 @@ const LiveScoreboard = ({ team, mode, isMinimized = false, onToggle }) => {
 
       <div className="scoreboard-body">
         <div className="current-score-display">
-          <div className="score-main" style={{ color: ranking.color }}>
+          <div className="score-main" style={{ color: performance.color }}>
             {scoreData.totalScore}
           </div>
-          <div className="score-status" style={{ background: ranking.color }}>
-            {ranking.label}
+          <div className="score-status" style={{ background: performance.color }}>
+            {performance.level}
           </div>
         </div>
 
@@ -56,17 +54,15 @@ const LiveScoreboard = ({ team, mode, isMinimized = false, onToggle }) => {
             <span className="component-label">Base Score</span>
             <span className="component-value">{scoreData.baseScore}</span>
           </div>
-          {scoreData.bonusPoints !== 0 && (
+          {scoreData.bonusPoints > 0 && (
             <div className="component-item bonus">
               <span className="component-label">Bonuses</span>
-              <span className="component-value">
-                {scoreData.bonusPoints > 0 ? '+' : ''}{scoreData.bonusPoints}
-              </span>
+              <span className="component-value">+{scoreData.bonusPoints}</span>
             </div>
           )}
         </div>
 
-        <button
+        <button 
           className="details-btn"
           onClick={() => setShowDetails(!showDetails)}
         >
@@ -76,29 +72,29 @@ const LiveScoreboard = ({ team, mode, isMinimized = false, onToggle }) => {
         {showDetails && (
           <div className="scoreboard-details">
             <div className="metrics-list">
-              {allMetrics.map((metric) => (
-                <div key={metric.id} className="metric-item">
+              {Object.entries(scoreData.metricScores).map(([id, metric]) => (
+                <div key={id} className="metric-item">
                   <div className="metric-info">
                     <span className="metric-name">{metric.name}</span>
-                    <span className="metric-actual">{metric.value}</span>
+                    <span className="metric-actual">{metric.actualValue}</span>
                   </div>
                   <div className="metric-bar-mini">
-                    <div
+                    <div 
                       className="metric-bar-mini-fill"
-                      style={{ width: `${metric.percentage}%` }}
+                      style={{ width: `${metric.rawValue}%` }}
                     ></div>
                   </div>
                   <span className="metric-points">
-                    {Math.round(metric.score)}
+                    {Math.round(metric.weightedScore)}
                   </span>
                 </div>
               ))}
             </div>
 
-            {positiveAchievements.length > 0 && (
+            {scoreData.earnedBonuses.length > 0 && (
               <div className="bonuses-list">
                 <div className="bonuses-header">Active Bonuses</div>
-                {positiveAchievements.map((bonus, index) => (
+                {scoreData.earnedBonuses.map((bonus, index) => (
                   <div key={index} className="bonus-item-mini">
                     <span className="bonus-icon">✓</span>
                     <span className="bonus-name-mini">{bonus.name}</span>

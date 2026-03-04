@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import './LiveDashboard.css';
+import { calculateResearchScore } from '../Configs/research-config';
 
 // Get gameId from URL
 const getGameId = () => {
@@ -121,37 +122,22 @@ const TeamCard = ({ team, rank, isResearchMode, showDetails }) => {
 const Leaderboard = ({ teams, isResearchMode }) => {
   // Calculate score for ranking
   const calculateScore = (team) => {
+    if (isResearchMode) {
+      return calculateResearchScore(team, team.progress || {}).totalScore;
+    }
     const progress = team.progress || {};
     const cash = progress.cash || team.cash || 0;
-    const trl = progress.currentTRL || team.trl || 3;
     const validations = progress.validationsTotal || team.validationCount || 0;
     const interviews = progress.interviewsTotal || team.interviewCount || 0;
     const investorAppeal = progress.investorAppeal || 2;
     const founderEquity = 100 - (progress.investorEquity || team.investorEquity || 0);
-
-    // Weighted scoring
     let score = 0;
-
-    // Cash component (max ~25 points)
     score += Math.min(25, Math.max(0, cash / 4000));
-
-    // TRL/Development component (max ~25 points)
-    if (isResearchMode) {
-      score += (trl - 3) * 4; // 0-24 points for TRL 3-9
-    } else {
-      score += Math.min(25, (progress.developmentHours || 0) / 40);
-    }
-
-    // Validation component (max ~25 points)
+    score += Math.min(25, (progress.developmentHours || 0) / 40);
     score += validations * 10;
     score += interviews * 2;
-
-    // Investor Appeal (max ~15 points)
     score += investorAppeal * 3;
-
-    // Equity retention bonus (max ~10 points)
     score += founderEquity / 10;
-
     return Math.round(score);
   };
 
@@ -432,24 +418,20 @@ const LiveDashboard = () => {
 
   // Calculate ranking for grid view
   const calculateScore = (team) => {
+    if (isResearchMode) {
+      return calculateResearchScore(team, team.progress || {}).totalScore;
+    }
     const progress = team.progress || {};
     const cash = progress.cash || team.cash || 0;
-    const trl = progress.currentTRL || team.trl || 3;
     const validations = progress.validationsTotal || team.validationCount || 0;
     const investorAppeal = progress.investorAppeal || 2;
     const founderEquity = 100 - (progress.investorEquity || team.investorEquity || 0);
-
     let score = 0;
     score += Math.min(25, Math.max(0, cash / 4000));
-    if (isResearchMode) {
-      score += (trl - 3) * 4;
-    } else {
-      score += Math.min(25, (progress.developmentHours || 0) / 40);
-    }
+    score += Math.min(25, (progress.developmentHours || 0) / 40);
     score += validations * 10;
     score += investorAppeal * 3;
     score += founderEquity / 10;
-
     return Math.round(score);
   };
 

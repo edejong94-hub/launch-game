@@ -1050,11 +1050,11 @@ lowRunwayWarning: {
       fewInterviews: (data) => (data.interviewCount || 0) < 3,
     },
     rankings: {
-      excellent: { min: 80, label: "🌟 Excellent", description: "Ready for Series A!" },
-      strong: { min: 65, label: "💪 Strong", description: "On track for success" },
-      good: { min: 50, label: "👍 Good", description: "Solid foundation" },
-      developing: { min: 35, label: "📈 Developing", description: "More work needed" },
-      struggling: { min: 0, label: "⚠️ Struggling", description: "Major challenges ahead" },
+      excellent: { min: 80, label: "🌟 Excellent", color: "#22c55e", description: "Ready for Series A!" },
+      strong: { min: 65, label: "💪 Strong", color: "#3b82f6", description: "On track for success" },
+      good: { min: 50, label: "👍 Good", color: "#f59e0b", description: "Solid foundation" },
+      developing: { min: 35, label: "📈 Developing", color: "#f97316", description: "More work needed" },
+      struggling: { min: 0, label: "⚠️ Struggling", color: "#ef4444", description: "Major challenges ahead" },
     },
   },
 
@@ -1626,6 +1626,95 @@ lowRunwayWarning: {
     equityLabel: "Founder Equity",
     fundingLabel: "Funding & Grants",
   },
+};
+
+// ============================================
+// SHARED RESEARCH SCORING FUNCTION
+// Single source of truth for research mode scoring.
+// Used by LiveDashboard, EndGameScoreBreakdown, and any other
+// component that needs to calculate a research team's score.
+// ============================================
+export const calculateResearchScore = (teamData = {}, progress = {}) => {
+  const config = RESEARCH_CONFIG.endGameScoring;
+
+  // Extract all metric values from teamData + progress
+  const values = {
+    cash: progress.cash || teamData.cash || 0,
+    revenue: teamData.funding?.revenue || teamData.totalRevenue || 0,
+    trl: progress.currentTRL || teamData.trl || 3,
+    patents: (teamData.completedActivities || []).filter(a =>
+      ['patentFiling', 'knowHowProtection'].includes(a)
+    ).length,
+    validations: progress.validationsTotal || teamData.validationCount || 0,
+    interviews: progress.interviewsTotal || teamData.interviewCount || 0,
+    equity: 100 - (progress.investorEquity || teamData.investorEquity || 0) - (teamData.licenceAgreement === 'equity' ? 10 : 0),
+    legalForm: teamData.legalForm && teamData.legalForm !== 'none' ? 1 : 0,
+  };
+
+  // Calculate metric category scores
+  const metricCategories = config.categories.filter(c => c.metrics);
+  const categoryScores = metricCategories.map(category => {
+    const metricScores = category.metrics.map(metric => {
+      const value = values[metric.id] || 0;
+      const ratio = Math.min(1, value / metric.target);
+      const score = ratio * metric.weight;
+      return { ...metric, value, score, percentage: Math.min(100, ratio * 100) };
+    });
+    const categoryTotal = metricScores.reduce((sum, m) => sum + m.score, 0);
+    return { ...category, metrics: metricScores, score: categoryTotal };
+  });
+
+  const baseScore = categoryScores.reduce((sum, c) => sum + c.score, 0);
+
+  // Evaluate achievements
+  const bonusCategory = config.categories.find(c => c.bonuses);
+  const achievementConditions = config.achievementConditions || {};
+  const achievements = [];
+
+  if (bonusCategory) {
+    // Merged data object for condition functions
+    const conditionData = {
+      ...teamData,
+      cash: values.cash,
+      validationCount: values.validations,
+      interviewCount: values.interviews,
+    };
+    bonusCategory.bonuses.forEach(bonus => {
+      const conditionFn = achievementConditions[bonus.condition];
+      if (conditionFn && conditionFn(conditionData)) {
+        achievements.push(bonus);
+      }
+    });
+  }
+
+  // Sort: positive first, then negative, by absolute points
+  achievements.sort((a, b) => {
+    if (a.points >= 0 && b.points < 0) return -1;
+    if (a.points < 0 && b.points >= 0) return 1;
+    return Math.abs(b.points) - Math.abs(a.points);
+  });
+
+  const bonusPoints = achievements.reduce((sum, a) => sum + a.points, 0);
+  const totalScore = Math.round(baseScore + bonusPoints);
+
+  // Determine ranking
+  const { rankings } = config;
+  let ranking;
+  if (totalScore >= rankings.excellent.min) ranking = rankings.excellent;
+  else if (totalScore >= rankings.strong.min) ranking = rankings.strong;
+  else if (totalScore >= rankings.good.min) ranking = rankings.good;
+  else if (totalScore >= rankings.developing.min) ranking = rankings.developing;
+  else ranking = rankings.struggling;
+
+  return {
+    totalScore,
+    baseScore,
+    bonusPoints,
+    categoryScores,
+    achievements,
+    values,
+    ranking,
+  };
 };
 
 export default RESEARCH_CONFIG;

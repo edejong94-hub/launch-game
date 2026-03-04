@@ -3,158 +3,25 @@ import {
   ChevronUp,
   ChevronDown
 } from "react-feather";
+import { calculateResearchScore } from '../Configs/research-config';
 
-
-// End game scoring configuration
-const SCORING_CONFIG = {
-  categories: [
-    {
-      id: "financial",
-      name: "Financial Health",
-      icon: "💰",
-      maxPoints: 25,
-      metrics: [
-        { id: "cash", name: "Cash Position", weight: 15, target: 50000, unit: "€" },
-        { id: "revenue", name: "Revenue Generated", weight: 10, target: 20000, unit: "€" },
-      ],
-    },
-    {
-      id: "technology",
-      name: "Technology Progress",
-      icon: "🔬",
-      maxPoints: 25,
-      metrics: [
-        { id: "trl", name: "TRL Level", weight: 20, target: 7, unit: "" },
-        { id: "patents", name: "IP Protection", weight: 5, target: 1, unit: " patents" },
-      ],
-    },
-    {
-      id: "market",
-      name: "Market Validation",
-      icon: "🎯",
-      maxPoints: 25,
-      metrics: [
-        { id: "validations", name: "Customer Validations", weight: 15, target: 2, unit: "" },
-        { id: "interviews", name: "Customer Interviews", weight: 10, target: 6, unit: "" },
-      ],
-    },
-    {
-      id: "team",
-      name: "Team & Structure",
-      icon: "👥",
-      maxPoints: 15,
-      metrics: [
-        { id: "equity", name: "Founder Equity", weight: 10, target: 60, unit: "%" },
-        { id: "legalForm", name: "Legal Structure", weight: 5, target: 1, unit: "" },
-      ],
-    },
-  ],
-  bonuses: [
-    { id: "grantWinner", name: "Grant Secured", points: 3, icon: "📋" },
-    { id: "incubator", name: "Incubator Accepted", points: 2, icon: "🏢" },
-    { id: "balancedTeam", name: "Balanced Team", points: 2, icon: "⚖️" },
-    { id: "goodLicence", name: "Fair Licence Deal", points: 2, icon: "📝" },
-    { id: "noBankruptcy", name: "Never Went Negative", points: 1, icon: "💪" },
-  ],
-  rankings: {
-    excellent: { min: 80, label: "🌟 Excellent", color: "#22c55e", description: "Ready for Series A!" },
-    strong: { min: 65, label: "💪 Strong", color: "#3b82f6", description: "On track for success" },
-    good: { min: 50, label: "👍 Good", color: "#f59e0b", description: "Solid foundation" },
-    developing: { min: 35, label: "📈 Developing", color: "#f97316", description: "More work needed" },
-    struggling: { min: 0, label: "⚠️ Struggling", color: "#ef4444", description: "Major challenges ahead" },
-  },
-};
-
-// Calculate score for a single metric
-const calculateMetricScore = (value, target, weight) => {
-  const ratio = Math.min(1, value / target);
-  return ratio * weight;
-};
-
-// Evaluate achievements based on config conditions
-const evaluateAchievements = (teamData, config) => {
-  const achievements = [];
-  const bonuses = config.endGameScoring?.bonuses || [];
-  const conditions = config.endGameScoring?.achievementConditions || {};
-
-  bonuses.forEach(bonus => {
-    const conditionFn = conditions[bonus.condition];
-    if (conditionFn && conditionFn(teamData)) {
-      achievements.push(bonus);
-    }
-  });
-
-  // Sort: positive first, then negative, by absolute points
-  achievements.sort((a, b) => {
-    if (a.points >= 0 && b.points < 0) return -1;
-    if (a.points < 0 && b.points >= 0) return 1;
-    return Math.abs(b.points) - Math.abs(a.points);
-  });
-
-  return achievements;
-};
-
-// Get ranking based on total score
-const getRanking = (score) => {
-  const { rankings } = SCORING_CONFIG;
-  if (score >= rankings.excellent.min) return rankings.excellent;
-  if (score >= rankings.strong.min) return rankings.strong;
-  if (score >= rankings.good.min) return rankings.good;
-  if (score >= rankings.developing.min) return rankings.developing;
-  return rankings.struggling;
-};
-
-const EndGameScoreBreakdown = ({ teamData, progress, config }) => {
+const EndGameScoreBreakdown = ({ teamData, progress }) => {
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
 
-  // Extract values from team data
-  const values = {
-    cash: progress?.cash || 0,
-    revenue: teamData?.funding?.revenue || 0,
-    trl: progress?.currentTRL || teamData?.trl || 3,
-    patents: teamData?.completedActivities?.filter(a =>
-      ['patentFiling', 'knowHowProtection'].includes(a)
-    ).length || 0,
-    validations: progress?.validationsTotal || 0,
-    interviews: progress?.interviewsTotal || 0,
-    equity: 100 - (progress?.investorEquity || 0) - (teamData?.licenceAgreement === 'equity' ? 10 : 0),
-    legalForm: teamData?.legalForm && teamData?.legalForm !== 'none' ? 1 : 0,
-  };
+  const {
+    totalScore,
+    baseScore,
+    bonusPoints,
+    categoryScores,
+    achievements,
+    values,
+    ranking,
+  } = calculateResearchScore(teamData, progress);
 
-  // Calculate category scores
-  const categoryScores = SCORING_CONFIG.categories.map(category => {
-    const metricScores = category.metrics.map(metric => {
-      const value = values[metric.id] || 0;
-      const score = calculateMetricScore(value, metric.target, metric.weight);
-      return {
-        ...metric,
-        value,
-        score,
-        percentage: Math.min(100, (value / metric.target) * 100),
-      };
-    });
-
-    const categoryTotal = metricScores.reduce((sum, m) => sum + m.score, 0);
-
-    return {
-      ...category,
-      metrics: metricScores,
-      score: categoryTotal,
-    };
-  });
-
-  // Evaluate achievements from config
-  const achievements = evaluateAchievements(teamData, config);
   const positiveAchievements = achievements.filter(a => a.points >= 0);
   const negativeAchievements = achievements.filter(a => a.points < 0);
-  const bonusPoints = achievements.reduce((sum, a) => sum + a.points, 0);
-
-  // Calculate total
-  const baseScore = categoryScores.reduce((sum, c) => sum + c.score, 0);
-  const totalScore = Math.round(baseScore + bonusPoints);
-  const ranking = getRanking(totalScore);
 
   // Animate score on mount
   const currentRef = useRef(0);

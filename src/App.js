@@ -3790,7 +3790,7 @@ export default function LaunchGame() {
                 startupIdea: data.startupIdea || roundData.startupIdea,
                 employmentStatus: roundData.employmentStatus ?? 'university',
                 teamData: {
-                  cash: roundData.progress?.cash ?? roundData.cash ?? startingCapital,
+                  cash: roundData.progress?.cash ?? roundData.cash ?? GAME_CONFIG.gameInfo.startingCapital,
                   phase: roundData.phase ?? 1,
                   employees: roundData.employees ?? 0,
                   hasSenior: roundData.hasSenior ?? false,

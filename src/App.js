@@ -182,8 +182,8 @@ const validateInitialData = (data) => {
 // ============================================
 // SHELL COMPONENT – header with Founded branding
 // ============================================
-const Shell = ({ children, currentRound, teamName, onReset }) => (
-  <div className="app-container">
+const Shell = ({ children, currentRound, teamName, onReset, gameMode }) => (
+  <div className={`app-container${gameMode === 'startup' ? ' startup-mode' : gameMode === 'research' ? ' research-mode' : ''}`}>
     <header className="app-header">
       <div className="header-content">
         <div className="brand">
@@ -255,7 +255,7 @@ const calculateProgress = (teamData, config) => {
   const completedActs = teamData.completedActivities || [];
   const hasMarketExpert = completedActs.includes('hireMarketExpert') || !!teamData.activities?.hireMarketExpert;
   const hasOperationsHire = completedActs.includes('hireOperations') || !!teamData.activities?.hireOperations;
-  const hasNetworking = completedActs.includes('networking') || !!teamData.activities?.networking;
+  const hasNetworking = completedActs.includes('networking') || completedActs.includes('businessDeveloper') || !!teamData.activities?.networking || !!teamData.activities?.businessDeveloper;
 
   // --- INTERVIEWS & VALIDATION ---
   let interviewsThisRound = 0;
@@ -1309,8 +1309,31 @@ const EXPERT_CATEGORIES = [
     name: 'Team Only',
     icon: '🎯',
     description: 'Internal work - no expert meeting needed',
-    activities: ['prototypeDevelopment', 'cofounderAgreement', 'hireBusinessPerson', 'hireMarketExpert', 'hireOperations', 'networking', 'pivot'],
+    activities: ['prototypeDevelopment', 'cofounderAgreement', 'hireBusinessPerson', 'hireMarketExpert', 'hireOperations', 'networking', 'pivot', 'productDevelopment', 'seniorTechnicalPartner', 'marketing', 'marketAnalysisDIY', 'marketAnalysisOutsourced'],
   },
+  // Startup-specific expert categories
+  {
+    id: 'technicalCoach',
+    name: 'Technical Coach',
+    icon: '🔬',
+    description: 'Technology introduction and technical partnership',
+    activities: ['technicalCoach'],
+  },
+  {
+    id: 'businessDeveloper',
+    name: 'Business Developer',
+    icon: '🤝',
+    description: 'Customer discovery conversations and market adoption',
+    activities: ['businessDeveloper'],
+  },
+  {
+    id: 'legal',
+    name: 'Legal Advisor',
+    icon: '📝',
+    description: 'Legal structure and company setup',
+    activities: ['legalAdvisor'],
+  },
+  // Shared / research expert categories
   {
     id: 'tto',
     name: 'TTO Officer',
@@ -1327,10 +1350,10 @@ const EXPERT_CATEGORIES = [
   },
   {
     id: 'patent',
-    name: 'Patent Attorney',
-    icon: '⚖️',
+    name: 'IP / Patent Expert',
+    icon: '🔒',
     description: 'Intellectual property protection',
-    activities: ['patentSearch', 'patentFiling', 'knowHowProtection'],
+    activities: ['patentConsult', 'patentSearch', 'patentFiling', 'knowHowProtection', 'patentOutsourced'],
   },
   {
     id: 'investor',
@@ -1341,10 +1364,10 @@ const EXPERT_CATEGORIES = [
   },
   {
     id: 'grant',
-    name: 'Grant Advisor',
+    name: 'Subsidy & Grant Advisor',
     icon: '📋',
     description: 'Non-dilutive funding options',
-    activities: ['grantTakeoff', 'grantWBSO', 'grantRegional'],
+    activities: ['subsidyAdvisor', 'grantTakeoff', 'grantWBSO', 'grantRegional'],
   },
   {
     id: 'bank',
@@ -1362,10 +1385,10 @@ const EXPERT_CATEGORIES = [
   },
   {
     id: 'incubator',
-    name: 'Incubator',
+    name: 'Incubator / Accelerator',
     icon: '🏢',
     description: 'Startup programs and office space',
-    activities: ['incubatorApplication'],
+    activities: ['incubatorMeeting', 'incubatorApplication'],
   },
 ];
 
@@ -1733,7 +1756,7 @@ const ExpertActivitySelector = ({
 // LOADING SCREEN
 // ============================================
 const LoadingScreen = () => (
-  <Shell currentRound={0}>
+  <Shell currentRound={0} gameMode={GAME_CONFIG.gameMode}>
     <div
       style={{
         display: "flex",
@@ -2342,7 +2365,7 @@ return () => {};
     let hasSenior = teamData.hasSenior || false;
     let seniorUnlocked = teamData.seniorUnlocked || false;
 
-    if (activities.networking && currentRound >= 3) {
+    if ((activities.networking || activities.businessDeveloper) && currentRound >= 3) {
       seniorUnlocked = true;
     }
 
@@ -2355,7 +2378,7 @@ return () => {};
         hiredProfiles.length - (teamData.hiredProfiles?.length || 0);
     }
 
-    if (activities.hireSenior && seniorUnlocked) {
+    if ((activities.hireSenior || activities.seniorTechnicalPartner) && seniorUnlocked) {
       hasSenior = true;
     }
     const previousInvestorEquity = teamData.investorEquity || 0;
@@ -2585,7 +2608,7 @@ return () => {};
       profilesComplete;
 
     return (
-      <Shell currentRound={0} onReset={onReset}>
+      <Shell currentRound={0} onReset={onReset} gameMode={GAME_CONFIG.gameMode}>
         {/* Toast notification container */}
         <toast.ToastContainer />
 
@@ -2835,7 +2858,7 @@ return () => {};
   // ============================================
   if (showReport) {
     return (
-      <Shell currentRound={currentRound} teamName={teamName} onReset={onReset}>
+      <Shell currentRound={currentRound} teamName={teamName} onReset={onReset} gameMode={GAME_CONFIG.gameMode}>
         {/* Toast notification container */}
         <toast.ToastContainer />
 
@@ -3181,7 +3204,7 @@ return () => {};
   // MAIN GAME FORM
   // ============================================
   return (
-    <Shell currentRound={currentRound} teamName={teamName} onReset={onReset}>
+    <Shell currentRound={currentRound} teamName={teamName} onReset={onReset} gameMode={GAME_CONFIG.gameMode}>
       {/* Toast notification container */}
       <toast.ToastContainer />
 
@@ -3341,7 +3364,7 @@ return () => {};
         />
       )}
 
-      {(employmentStatus === 'university' || employmentStatus === 'parttime') && (
+      {isResearchMode && (employmentStatus === 'university' || employmentStatus === 'parttime') && (
         <InterruptCardRow
           employmentStatus={employmentStatus}
           onImpactChange={setInterruptImpact}
@@ -3443,12 +3466,14 @@ return () => {};
         description={
           isResearchMode
             ? "You need to meet with TTO first to discuss legal options."
-            : "Visit the KVK expert to unlock legal form options."
+            : "Visit the Legal Advisor to unlock legal form options."
         }
       >
         {activities.kvkConsult ||
+        activities.legalAdvisor ||
         activities.ttoDiscussion ||
         teamData.completedActivities?.includes("kvkConsult") ||
+        teamData.completedActivities?.includes("legalAdvisor") ||
         teamData.completedActivities?.includes("ttoDiscussion") ? (
           <div className="office-grid">
             {Object.entries(config.legalForms).map(([key, form]) => {
@@ -3693,6 +3718,67 @@ return () => {};
           </div>
         </div>
       </SectionCard>
+
+      {/* Readiness Sheet – startup mode only, shown to experts during meetings */}
+      {!isResearchMode && (() => {
+        const completedActs = teamData.completedActivities || [];
+        const allActs = { ...completedActs.reduce((acc, k) => ({ ...acc, [k]: true }), {}), ...activities };
+        const hasIP = allActs.knowHowProtection || allActs.patentOutsourced;
+        const hasLegal = !!legalForm;
+        const interviews = progress.interviewsTotal || 0;
+        const validations = progress.validationsTotal || 0;
+        const cash = progress.cash || 0;
+
+        const dot = (ok, warn) => {
+          const color = ok ? '#22c55e' : warn ? '#f59e0b' : '#ef4444';
+          const label = ok ? '●' : warn ? '◑' : '○';
+          return <span style={{ color, fontWeight: 700, marginRight: '0.4rem', fontSize: '1rem' }}>{label}</span>;
+        };
+
+        const row = (label, value, ok, warn) => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+            <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>{label}</span>
+            <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.85rem', fontWeight: 600, color: ok ? '#15803d' : warn ? '#92400e' : '#991b1b' }}>
+              {dot(ok, warn)}{value}
+            </span>
+          </div>
+        );
+
+        return (
+          <SectionCard
+            title="Readiness Sheet"
+            description="Open this on your laptop when meeting with investors or the bank. They will see exactly where you stand."
+            icon={<span style={{ fontSize: '1rem' }}>📋</span>}
+          >
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              {/* Investor column */}
+              <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '0.875rem', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#374151', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  💰 Investor
+                </div>
+                {row('Customer interviews', `${interviews}`, interviews >= 3, interviews >= 1)}
+                {row('Customer validations', `${validations}`, validations >= 2, validations >= 1)}
+                {row('Legal structure', hasLegal ? legalForm.toUpperCase() : 'None', hasLegal, false)}
+                {row('IP protection', hasIP ? 'Yes' : 'None', !!hasIP, false)}
+                {row('Cash available', `€${cash.toLocaleString()}`, cash > 5000, cash > 0)}
+              </div>
+              {/* Bank column */}
+              <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '0.875rem', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#374151', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  🏦 Bank
+                </div>
+                {row('Legal structure', hasLegal ? legalForm.toUpperCase() : 'None', hasLegal, false)}
+                {row('Cash available', `€${cash.toLocaleString()}`, cash > 5000, cash > 0)}
+                {row('Customer interviews', `${interviews}`, interviews >= 3, interviews >= 1)}
+                {row('Revenue', funding?.revenue > 0 ? `€${Number(funding.revenue).toLocaleString()}` : 'None', Number(funding?.revenue) > 0, false)}
+              </div>
+            </div>
+            <p style={{ marginTop: '0.75rem', fontSize: '0.72rem', color: '#9ca3af', lineHeight: 1.5 }}>
+              ● Ready &nbsp;◑ Partial &nbsp;○ Not yet — you can still meet these experts at any time
+            </p>
+          </SectionCard>
+        );
+      })()}
 
       {formError && (
         <div className="alert alert-warning" role="alert" aria-live="assertive" style={{ marginBottom: "1rem" }}>

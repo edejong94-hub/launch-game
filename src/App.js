@@ -161,6 +161,7 @@ const validateInitialData = (data) => {
       interviewCount: typeof data.teamData.interviewCount === 'number' ? data.teamData.interviewCount : 0,
       validationCount: typeof data.teamData.validationCount === 'number' ? data.teamData.validationCount : 0,
       investorEquity: typeof data.teamData.investorEquity === 'number' ? data.teamData.investorEquity : 0,
+      cashHistory: Array.isArray(data.teamData.cashHistory) ? data.teamData.cashHistory : [],
     } : {
       cash: GAME_CONFIG.gameInfo.startingCapital,
       phase: 1,
@@ -172,6 +173,7 @@ const validateInitialData = (data) => {
       interviewCount: 0,
       validationCount: 0,
       investorEquity: 0,
+      cashHistory: [],
     },
   };
 
@@ -793,20 +795,17 @@ const SectionCard = ({ title, description, children, icon }) => (
   </section>
 );
 
-const StatTile = ({ label, value, sub, tone = "default" }) => {
+const StatTile = ({ label, value, sub, tone = "default", icon }) => {
   let toneClass = "stat-card";
   if (tone === "success") toneClass += " success";
   if (tone === "danger") toneClass += " danger";
   if (tone === "warning") toneClass += " warning";
 
-  // Check if value contains currency symbol
-  const isMoney = typeof value === 'string' && value.includes('€');
-  const valueStyle = isMoney ? { color: '#22c55e', fontWeight: '800' } : {};
-
   return (
     <div className={toneClass}>
+      {icon && !isResearchMode && <div className="stat-icon">{icon}</div>}
       <p className="stat-label">{label}</p>
-      <p className="stat-value" style={valueStyle}>{value}</p>
+      <p className="stat-value">{value}</p>
       {sub && <p className="stat-sub">{sub}</p>}
     </div>
   );
@@ -1392,6 +1391,22 @@ const EXPERT_CATEGORIES = [
   },
 ];
 
+// Color accents for expert dropdown categories (startup mode)
+const CATEGORY_COLORS = {
+  technicalCoach: '#6366f1',   // indigo
+  businessDeveloper: '#f97316', // orange
+  legal: '#8b5cf6',            // purple
+  customer: '#0ea5e9',         // sky blue
+  patent: '#ec4899',           // pink
+  investor: '#16a34a',         // green
+  grant: '#eab308',            // yellow
+  bank: '#14b8a6',             // teal
+  industry: '#f43f5e',         // rose
+  incubator: '#6366f1',        // indigo
+  tto: '#8b5cf6',              // purple
+  team: '#f97316',             // orange
+};
+
 const ExpertActivitySelector = ({
   config,
   activities,
@@ -1442,12 +1457,12 @@ const ExpertActivitySelector = ({
           gap: '0.75rem',
           padding: '0.875rem 1rem',
           background: checked && !isLocked
-            ? 'linear-gradient(145deg, rgba(193, 254, 0, 0.15), rgba(193, 254, 0, 0.05))'
-            : 'linear-gradient(145deg, #0a0a0a, #0f0f0f)',
+            ? (isResearchMode ? 'linear-gradient(145deg, rgba(193, 254, 0, 0.15), rgba(193, 254, 0, 0.05))' : 'rgba(249, 115, 22, 0.06)')
+            : (isResearchMode ? 'linear-gradient(145deg, #0a0a0a, #0f0f0f)' : '#ffffff'),
           borderRadius: '10px',
           border: checked && !isLocked
-            ? '1px solid rgba(193, 254, 0, 0.4)'
-            : '1px solid #1f1f1f',
+            ? (isResearchMode ? '1px solid rgba(193, 254, 0, 0.4)' : '1px solid rgba(249, 115, 22, 0.4)')
+            : (isResearchMode ? '1px solid #1f1f1f' : '1px solid #e8e5de'),
           cursor: isLocked || cannotUncheck ? 'not-allowed' : 'pointer',
           opacity: isLocked ? 0.5 : 1,
           transition: 'all 0.2s ease',
@@ -1456,10 +1471,10 @@ const ExpertActivitySelector = ({
             boxShadow: '0 0 15px rgba(52, 211, 153, 0.15)',
           }),
           ...(isPivot && {
-            borderColor: checked ? '#f59e0b' : '#44403c',
+            borderColor: checked ? '#f59e0b' : (isResearchMode ? '#44403c' : '#e8e5de'),
             background: checked
               ? 'linear-gradient(145deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05))'
-              : 'linear-gradient(145deg, #0a0a0a, #0f0f0f)',
+              : (isResearchMode ? 'linear-gradient(145deg, #0a0a0a, #0f0f0f)' : '#ffffff'),
           }),
         }}
       >
@@ -1476,7 +1491,7 @@ const ExpertActivitySelector = ({
             width: '18px',
             height: '18px',
             marginTop: '2px',
-            accentColor: '#c1fe00',
+            accentColor: isResearchMode ? '#c1fe00' : '#f97316',
             cursor: isLocked || cannotUncheck ? 'not-allowed' : 'pointer',
           }}
         />
@@ -1486,7 +1501,7 @@ const ExpertActivitySelector = ({
             {justUnlocked && <span style={{ fontSize: '12px' }}>✨</span>}
             <span style={{
               fontWeight: 600,
-              color: isLocked ? '#737373' : '#e5e5e5',
+              color: isLocked ? '#737373' : (isResearchMode ? '#e5e5e5' : '#111827'),
               fontSize: '0.9rem',
             }}>
               {activity.name}
@@ -1497,10 +1512,10 @@ const ExpertActivitySelector = ({
             gap: '0.75rem',
             marginTop: '0.375rem',
             fontSize: '0.8rem',
-            color: '#a3a3a3',
+            color: isResearchMode ? '#a3a3a3' : '#6b7280',
           }}>
             <span>{activity.costTime}h</span>
-            <span style={{ color: '#22c55e', fontWeight: 600 }}>€{activity.costMoney.toLocaleString()}</span>
+            <span style={{ color: '#16a34a', fontWeight: 600 }}>€{activity.costMoney.toLocaleString()}</span>
           </div>
           {activity.description && (
             <p style={{
@@ -1563,11 +1578,17 @@ const ExpertActivitySelector = ({
       <div
         key={category.id}
         style={{
-          background: 'linear-gradient(145deg, #0a0a0a, #0f0f0f)',
-          borderRadius: '10px',
-          border: selectionCount > 0 ? '1px solid rgba(193, 254, 0, 0.3)' : '1px solid #262626',
+          background: isResearchMode ? 'linear-gradient(145deg, #0a0a0a, #0f0f0f)' : '#ffffff',
+          borderRadius: isResearchMode ? '10px' : '14px',
+          border: selectionCount > 0
+            ? (isResearchMode ? '1px solid rgba(193, 254, 0, 0.3)' : '1px solid rgba(249, 115, 22, 0.4)')
+            : (isResearchMode ? '1px solid #262626' : '1px solid #f0ede6'),
           overflow: 'hidden',
-          marginBottom: '0.5rem',
+          marginBottom: isResearchMode ? '0.5rem' : '10px',
+          ...(! isResearchMode && {
+            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            borderLeft: `4px solid ${CATEGORY_COLORS[category.id] || '#f97316'}`,
+          }),
         }}
       >
         {/* Dropdown Header */}
@@ -1591,7 +1612,9 @@ const ExpertActivitySelector = ({
             <div style={{ textAlign: 'left' }}>
               <div style={{
                 fontWeight: 600,
-                color: isExpanded ? '#c1fe00' : '#e5e5e5',
+                color: isExpanded
+                  ? (isResearchMode ? '#c1fe00' : '#f97316')
+                  : (isResearchMode ? '#e5e5e5' : '#111827'),
                 fontSize: '0.9rem',
                 display: 'flex',
                 alignItems: 'center',
@@ -1600,8 +1623,8 @@ const ExpertActivitySelector = ({
                 {category.name}
                 {selectionCount > 0 && (
                   <span style={{
-                    background: '#c1fe00',
-                    color: '#000',
+                    background: isResearchMode ? '#c1fe00' : '#f97316',
+                    color: isResearchMode ? '#000' : '#fff',
                     fontSize: '0.7rem',
                     fontWeight: 700,
                     padding: '0.125rem 0.5rem',
@@ -1611,7 +1634,7 @@ const ExpertActivitySelector = ({
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#737373', marginTop: '0.125rem' }}>
+              <div style={{ fontSize: '0.75rem', color: isResearchMode ? '#737373' : '#9ca3af', marginTop: '0.125rem' }}>
                 {category.description}
               </div>
             </div>
@@ -1619,7 +1642,7 @@ const ExpertActivitySelector = ({
           <ChevronDown
             size={20}
             style={{
-              color: isExpanded ? '#c1fe00' : '#737373',
+              color: isExpanded ? (isResearchMode ? '#c1fe00' : '#f97316') : (isResearchMode ? '#737373' : '#9ca3af'),
               transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s ease',
             }}
@@ -1630,7 +1653,7 @@ const ExpertActivitySelector = ({
         {isExpanded && (
           <div style={{
             padding: '0 1rem 1rem 1rem',
-            borderTop: '1px solid #262626',
+            borderTop: isResearchMode ? '1px solid #262626' : '1px solid #f0ede6',
             animation: 'fadeIn 0.15s ease',
           }}>
             <div style={{ display: 'grid', gap: '0.5rem', marginTop: '0.75rem' }}>
@@ -1653,14 +1676,14 @@ const ExpertActivitySelector = ({
           marginBottom: '0.5rem',
         }}>
           <span style={{ fontSize: '1.1rem' }}>🤝</span>
-          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#e5e5e5' }}>
+          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: isResearchMode ? '#e5e5e5' : '#111827' }}>
             Expert Meetings
           </h3>
         </div>
         <p style={{
           margin: '0 0 0.75rem 0',
           fontSize: '0.75rem',
-          color: '#737373',
+          color: isResearchMode ? '#737373' : '#6b7280',
           lineHeight: 1.4,
         }}>
           Schedule meetings to unlock funding, protect IP, and validate customers.
@@ -1681,14 +1704,14 @@ const ExpertActivitySelector = ({
           marginBottom: '0.5rem',
         }}>
           <span style={{ fontSize: '1.1rem' }}>🎯</span>
-          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#e5e5e5' }}>
+          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: isResearchMode ? '#e5e5e5' : '#111827' }}>
             Team Activities
           </h3>
         </div>
         <p style={{
           margin: '0 0 0.75rem 0',
           fontSize: '0.75rem',
-          color: '#737373',
+          color: isResearchMode ? '#737373' : '#6b7280',
           lineHeight: 1.4,
         }}>
           Internal work — no external meetings required.
@@ -1696,20 +1719,24 @@ const ExpertActivitySelector = ({
 
         {/* Hiring */}
         <div style={{
-          background: 'linear-gradient(145deg, #0a0a0a, #0f0f0f)',
-          borderRadius: '10px',
-          border: '1px solid #262626',
+          background: isResearchMode ? 'linear-gradient(145deg, #0a0a0a, #0f0f0f)' : '#ffffff',
+          borderRadius: isResearchMode ? '10px' : '14px',
+          border: isResearchMode ? '1px solid #262626' : '1px solid #f0ede6',
           padding: '0.875rem 1rem',
-          marginBottom: '0.5rem',
+          marginBottom: isResearchMode ? '0.5rem' : '10px',
+          ...(! isResearchMode && {
+            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            borderLeft: '4px solid #0ea5e9',
+          }),
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <span style={{ fontSize: '1.25rem' }}>👥</span>
               <div>
-                <span style={{ fontWeight: 600, color: '#e5e5e5', fontSize: '0.9rem' }}>
+                <span style={{ fontWeight: 600, color: isResearchMode ? '#e5e5e5' : '#111827', fontSize: '0.9rem' }}>
                   Hire Team Members
                 </span>
-                <div style={{ fontSize: '0.75rem', color: '#737373', marginTop: '0.125rem' }}>
+                <div style={{ fontSize: '0.75rem', color: isResearchMode ? '#737373' : '#9ca3af', marginTop: '0.125rem' }}>
                   40h per hire • €25k salary/round
                 </div>
               </div>
@@ -1727,9 +1754,9 @@ const ExpertActivitySelector = ({
                 width: '60px',
                 padding: '0.5rem',
                 borderRadius: '8px',
-                border: '1px solid #333',
-                background: '#0a0a0a',
-                color: '#e5e5e5',
+                border: isResearchMode ? '1px solid #333' : '1px solid #e8e5de',
+                background: isResearchMode ? '#0a0a0a' : '#ffffff',
+                color: isResearchMode ? '#e5e5e5' : '#111827',
                 fontSize: '1rem',
                 fontWeight: 600,
                 textAlign: 'center',
@@ -1979,6 +2006,9 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
 
   // Interrupt cards
   const [interruptImpact, setInterruptImpact] = useState({ hours: 0, money: 0, trl: 0, freeExpert: false, cards: [] });
+
+  // Startup Snapshot overlay
+  const [showSnapshot, setShowSnapshot] = useState(false);
 
   const [startupIdea, setStartupIdea] = useState(initialData?.startupIdea || {
     technique: "",
@@ -2447,6 +2477,7 @@ return () => {};
   totalRevenue: (teamData.totalRevenue ?? 0) + Number(funding.revenue || 0),
   loanInterest: Math.max(teamData.loanInterest ?? 0, Number(funding.loanInterest || 0)),
   lowestCash: Math.min(teamData.lowestCash ?? progress.cash, progress.cash),
+  cashHistory: [...(teamData.cashHistory || []), progress.cash],
 };
 
     if (isResearchMode) {
@@ -3094,25 +3125,25 @@ return () => {};
                     ) : (
                       <>
                         <li style={{
-                          color: "#e5e5e5",
+                          color: isResearchMode ? "#e5e5e5" : "#374151",
                           fontSize: "0.95rem",
                           fontWeight: 500
                         }}>
-                          Development: <strong style={{ color: "#c1fe00" }}>{progress.developmentHours}/{config.phases.phase1.hoursRequired}h</strong>
+                          Development: <strong style={{ color: "#f97316" }}>{progress.developmentHours}/{config.phases.phase1.hoursRequired}h</strong>
                         </li>
                         <li style={{
-                          color: "#e5e5e5",
+                          color: isResearchMode ? "#e5e5e5" : "#374151",
                           fontSize: "0.95rem",
                           fontWeight: 500
                         }}>
-                          Validations: <strong style={{ color: "#c1fe00" }}>{progress.validationsTotal}/1</strong>
+                          Validations: <strong style={{ color: "#f97316" }}>{progress.validationsTotal}/1</strong>
                         </li>
                         <li style={{
-                          color: "#e5e5e5",
+                          color: isResearchMode ? "#e5e5e5" : "#374151",
                           fontSize: "0.95rem",
                           fontWeight: 500
                         }}>
-                          Interviews: <strong style={{ color: "#c1fe00" }}>{progress.interviewsTotal}/4</strong>
+                          Interviews: <strong style={{ color: "#f97316" }}>{progress.interviewsTotal}/4</strong>
                         </li>
                       </>
                     )}
@@ -3263,6 +3294,7 @@ return () => {};
           value={`€${progress.cash.toLocaleString()}`}
           sub={progress.cash < 0 ? "⚠️ Negative!" : "After expenses"}
           tone={progress.cash < 0 ? "danger" : "success"}
+          icon="💰"
         />
         <StatTile
           label="Time This Round"
@@ -3272,6 +3304,7 @@ return () => {};
             progress.totalTimeSpent > progress.maxHoursAvailable ? "danger" :
             progress.totalTimeSpent > progress.maxHoursAvailable * 0.8 ? "warning" : "default"
           }
+          icon="⏱️"
         />
         {isResearchMode && (
           <StatTile
@@ -3289,8 +3322,116 @@ return () => {};
           value={`€${progress.totalMoneySpent.toLocaleString()}`}
           sub="This round"
           tone="default"
+          icon="📊"
         />
       </div>
+
+      {/* Hours Progress Bar – startup mode */}
+      {!isResearchMode && (
+        <div className="startup-hours-bar">
+          <div className="hours-bar-header">
+            <span className="hours-bar-label">⏱️ Hours This Round</span>
+            <span className={`hours-bar-value ${progress.hoursOverLimit ? 'over' : ''}`}>
+              {progress.totalTimeSpent} / {progress.maxHoursAvailable}h
+            </span>
+          </div>
+          <div className="hours-bar-track">
+            <div
+              className={`hours-bar-fill ${progress.hoursOverLimit ? 'over' : (progress.totalTimeSpent / progress.maxHoursAvailable) > 0.8 ? 'warning' : ''}`}
+              style={{ width: `${Math.min(100, (progress.totalTimeSpent / progress.maxHoursAvailable) * 100)}%` }}
+            />
+          </div>
+          {progress.hoursOverLimit && (
+            <p className="hours-bar-warning">⚠️ Over budget! Remove activities to stay within your hours.</p>
+          )}
+        </div>
+      )}
+
+      {/* Cash Flow Graph – startup mode only, shows money trajectory across rounds */}
+      {!isResearchMode && (() => {
+        const startCash = config.gameInfo.startingCapital;
+        const history = teamData.cashHistory || [];
+        // Build data points: Start + each completed round + current live preview
+        const points = [startCash, ...history, progress.cash];
+        const labels = ['Start', ...history.map((_, i) => `R${i + 1}`), currentRound > 1 ? `R${currentRound}` : 'R1'];
+        // If we're still in round 1 and no history yet, just show Start → R1
+        // If we have history, show Start + completed rounds + current
+
+        const maxVal = Math.max(...points, 1);
+        const minVal = Math.min(...points, 0);
+        const range = maxVal - minVal || 1;
+
+        const w = 500;
+        const h = 140;
+        const padX = 40;
+        const padTop = 25;
+        const padBot = 25;
+        const graphW = w - padX * 2;
+        const graphH = h - padTop - padBot;
+
+        const getX = (i) => padX + (i / (points.length - 1 || 1)) * graphW;
+        const getY = (v) => padTop + (1 - (v - minVal) / range) * graphH;
+        const zeroY = getY(0);
+
+        // Build path
+        const linePath = points.map((v, i) => `${i === 0 ? 'M' : 'L'}${getX(i).toFixed(1)},${getY(v).toFixed(1)}`).join(' ');
+        // Area fill path (down to zero line)
+        const areaPath = linePath +
+          ` L${getX(points.length - 1).toFixed(1)},${zeroY.toFixed(1)}` +
+          ` L${getX(0).toFixed(1)},${zeroY.toFixed(1)} Z`;
+
+        const lastVal = points[points.length - 1];
+        const isNeg = lastVal < 0;
+
+        return (
+          <div className="cash-graph-card">
+            <div className="graph-header">
+              <div>
+                <div className="graph-title">Cash Flow</div>
+                <div className="graph-sub">Your money over time</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div className={`graph-value ${isNeg ? 'negative' : 'positive'}`}>
+                  €{lastVal.toLocaleString()}
+                </div>
+                <div className="graph-sub">
+                  {lastVal >= startCash ? '↑' : '↓'} from €{startCash.toLocaleString()} start
+                </div>
+              </div>
+            </div>
+            <svg viewBox={`0 0 ${w} ${h}`} style={{ height: 160 }}>
+              {/* Zero line */}
+              {minVal < 0 && (
+                <line
+                  x1={padX} y1={zeroY} x2={w - padX} y2={zeroY}
+                  className="graph-zero-line"
+                />
+              )}
+              {/* Area fill */}
+              <path d={areaPath} className={`graph-area ${isNeg ? 'negative' : 'positive'}`} />
+              {/* Line */}
+              <path d={linePath} className={`graph-line ${isNeg ? 'negative' : 'positive'}`} />
+              {/* Dots + labels */}
+              {points.map((v, i) => (
+                <g key={i}>
+                  <circle
+                    cx={getX(i)} cy={getY(v)}
+                    className={`graph-dot ${v < 0 ? 'negative' : 'positive'}`}
+                  />
+                  <text x={getX(i)} y={h - 4} className="graph-label">{labels[i]}</text>
+                  <text
+                    x={getX(i)}
+                    y={getY(v) - 12}
+                    className={`graph-value-label ${v < 0 ? 'negative' : 'positive'}`}
+                  >
+                    €{(v / 1000).toFixed(1)}k
+                  </text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        );
+      })()}
 
       {/* Sticky Hours Bar */}
       {isResearchMode && (
@@ -3513,10 +3654,10 @@ return () => {};
             style={{
               padding: "3rem 2rem",
               textAlign: "center",
-              background: "linear-gradient(145deg, #0a0a0a, #141414)",
+              background: isResearchMode ? "linear-gradient(145deg, #0a0a0a, #141414)" : "#fafaf7",
               borderRadius: "16px",
-              border: "1px solid #262626",
-              color: "#a3a3a3",
+              border: isResearchMode ? "1px solid #262626" : "1px solid #e8e5de",
+              color: isResearchMode ? "#a3a3a3" : "#6b7280",
             }}
           >
             <Lock
@@ -3524,7 +3665,7 @@ return () => {};
               style={{
                 margin: "0 auto 1.5rem",
                 opacity: 0.6,
-                color: "#737373",
+                color: isResearchMode ? "#737373" : "#9ca3af",
                 display: 'block'
               }}
             />
@@ -3533,16 +3674,16 @@ return () => {};
               lineHeight: "1.6",
               marginBottom: "1rem"
             }}>
-              Meet the <strong style={{ color: "#c1fe00" }}>{isResearchMode ? "TTO" : "KVK"} expert</strong> first to unlock this section.
+              Meet the <strong style={{ color: isResearchMode ? "#c1fe00" : "#f97316" }}>{isResearchMode ? "TTO" : "Legal Advisor"} expert</strong> first to unlock this section.
             </p>
             <div style={{
               marginTop: "1.5rem",
               paddingTop: "1.5rem",
-              borderTop: "1px solid #262626"
+              borderTop: isResearchMode ? "1px solid #262626" : "1px solid #e8e5de"
             }}>
               <p style={{
                 fontSize: "0.875rem",
-                color: "#737373",
+                color: isResearchMode ? "#737373" : "#9ca3af",
                 marginBottom: "0.5rem"
               }}>
                 Current:
@@ -3550,7 +3691,7 @@ return () => {};
               <p style={{
                 fontSize: "1.125rem",
                 fontWeight: 600,
-                color: legalForm ? "#e5e5e5" : "#525252"
+                color: legalForm ? (isResearchMode ? "#e5e5e5" : "#111827") : (isResearchMode ? "#525252" : "#9ca3af")
               }}>
                 {legalForm
                   ? config.legalForms[legalForm].name
@@ -3719,7 +3860,7 @@ return () => {};
         </div>
       </SectionCard>
 
-      {/* Readiness Sheet – startup mode only, shown to experts during meetings */}
+      {/* Startup Snapshot – floating button + overlay (startup mode only) */}
       {!isResearchMode && (() => {
         const completedActs = teamData.completedActivities || [];
         const allActs = { ...completedActs.reduce((acc, k) => ({ ...acc, [k]: true }), {}), ...activities };
@@ -3729,54 +3870,56 @@ return () => {};
         const validations = progress.validationsTotal || 0;
         const cash = progress.cash || 0;
 
-        const dot = (ok, warn) => {
-          const color = ok ? '#22c55e' : warn ? '#f59e0b' : '#ef4444';
-          const label = ok ? '●' : warn ? '◑' : '○';
-          return <span style={{ color, fontWeight: 700, marginRight: '0.4rem', fontSize: '1rem' }}>{label}</span>;
-        };
-
-        const row = (label, value, ok, warn) => (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-            <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>{label}</span>
-            <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.85rem', fontWeight: 600, color: ok ? '#15803d' : warn ? '#92400e' : '#991b1b' }}>
-              {dot(ok, warn)}{value}
-            </span>
+        const snapshotRow = (label, value) => (
+          <div className="snapshot-row">
+            <span className="snapshot-row-label">{label}</span>
+            <span className="snapshot-row-value">{value}</span>
           </div>
         );
 
         return (
-          <SectionCard
-            title="Readiness Sheet"
-            description="Open this on your laptop when meeting with investors or the bank. They will see exactly where you stand."
-            icon={<span style={{ fontSize: '1rem' }}>📋</span>}
-          >
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              {/* Investor column */}
-              <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '0.875rem', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#374151', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  💰 Investor
+          <>
+            <button
+              type="button"
+              className="startup-snapshot-btn"
+              onClick={() => setShowSnapshot(true)}
+            >
+              📋 Startup Snapshot
+            </button>
+
+            {showSnapshot && (
+              <div className="startup-snapshot-overlay" onClick={() => setShowSnapshot(false)}>
+                <div className="startup-snapshot-card" onClick={(e) => e.stopPropagation()}>
+                  <div className="snapshot-header">
+                    <div>
+                      <h2>Startup Snapshot</h2>
+                      <span className="snapshot-round">Round {currentRound} of {totalRounds}</span>
+                    </div>
+                    <button className="snapshot-close" onClick={() => setShowSnapshot(false)}>×</button>
+                  </div>
+                  <div className="snapshot-body">
+                    <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '16px', lineHeight: 1.5 }}>
+                      Show this to any expert when you meet them.
+                    </p>
+                    <div className="snapshot-grid">
+                      {snapshotRow('Cash', `€${cash.toLocaleString()}`)}
+                      {snapshotRow('Team', `${founders} founder${founders !== 1 ? 's' : ''}${teamData.employees > 0 ? ` + ${teamData.employees} hire${teamData.employees !== 1 ? 's' : ''}` : ''}`)}
+                      {snapshotRow('Interviews', interviews > 0 ? `${interviews}` : '0')}
+                      {snapshotRow('Validations', validations > 0 ? `${validations}` : '0')}
+                      {snapshotRow('Legal form', hasLegal ? config.legalForms[legalForm]?.name || legalForm.toUpperCase() : 'Not chosen yet')}
+                      {snapshotRow('IP', hasIP ? 'Protected' : 'None')}
+                      {snapshotRow('Office', config.companyOffice[office]?.name || office)}
+                      {Number(funding?.revenue) > 0 && snapshotRow('Revenue', `€${Number(funding.revenue).toLocaleString()}`)}
+                      {(teamData.investorEquity || 0) > 0 && snapshotRow('Equity given', `${teamData.investorEquity}%`)}
+                    </div>
+                    <div className="snapshot-hint">
+                      Just facts — show this card to any expert you meet.
+                    </div>
+                  </div>
                 </div>
-                {row('Customer interviews', `${interviews}`, interviews >= 3, interviews >= 1)}
-                {row('Customer validations', `${validations}`, validations >= 2, validations >= 1)}
-                {row('Legal structure', hasLegal ? legalForm.toUpperCase() : 'None', hasLegal, false)}
-                {row('IP protection', hasIP ? 'Yes' : 'None', !!hasIP, false)}
-                {row('Cash available', `€${cash.toLocaleString()}`, cash > 5000, cash > 0)}
               </div>
-              {/* Bank column */}
-              <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '0.875rem', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#374151', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  🏦 Bank
-                </div>
-                {row('Legal structure', hasLegal ? legalForm.toUpperCase() : 'None', hasLegal, false)}
-                {row('Cash available', `€${cash.toLocaleString()}`, cash > 5000, cash > 0)}
-                {row('Customer interviews', `${interviews}`, interviews >= 3, interviews >= 1)}
-                {row('Revenue', funding?.revenue > 0 ? `€${Number(funding.revenue).toLocaleString()}` : 'None', Number(funding?.revenue) > 0, false)}
-              </div>
-            </div>
-            <p style={{ marginTop: '0.75rem', fontSize: '0.72rem', color: '#9ca3af', lineHeight: 1.5 }}>
-              ● Ready &nbsp;◑ Partial &nbsp;○ Not yet — you can still meet these experts at any time
-            </p>
-          </SectionCard>
+            )}
+          </>
         );
       })()}
 

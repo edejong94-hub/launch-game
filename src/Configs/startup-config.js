@@ -23,13 +23,13 @@ export const STARTUP_CONFIG = {
   phases: {
     phase1: {
       name: "Idea & Validation",
-      hoursRequired: 4000,
+      hoursRequired: 5000,
       customerValidationRequired: 3,
       minimumInterviews: 3,
     },
     phase2: {
       name: "Growth & Scale",
-      hoursRequired: 12000,
+      hoursRequired: 10000,
     },
   },
 
@@ -157,7 +157,26 @@ export const STARTUP_CONFIG = {
       costMoney: 0,
       category: "experts",
       description: "Discuss loans and credit facilities. Best terms require a legal structure in place. You can go without one — the bank will tell you what they need to see.",
-      unlocks: ["bankLoan"],
+      unlocks: ["loanApplication", "raboInnovatielening"],
+    },
+    loanApplication: {
+      name: "Loan Application",
+      costTime: 16,
+      costMoney: 0,
+      category: "experts",
+      description: "Apply for a business loan. Requires a bank meeting first.",
+      requiresActivity: "bankMeeting",
+    },
+    raboInnovatielening: {
+      name: "Rabo Innovatie Lening",
+      costTime: 24,
+      costMoney: 0,
+      category: "experts",
+      description: "Apply for the Rabobank Innovation Loan — a special facility for innovative startups. Requires BV legal form and bank meeting.",
+      requiresActivity: "bankMeeting",
+      requirements: {
+        legalForm: ["bv"],
+      },
     },
     patentConsult: {
       name: "IP / Patent Expert",
@@ -246,6 +265,37 @@ export const STARTUP_CONFIG = {
       description: "Hire a patent attorney for full IP protection on your technology. Significantly boosts investor confidence.",
       salesGradeBonus: 2,
       requiresActivity: "patentConsult",
+    },
+
+    // === LAUNCHING CUSTOMER (Phase 2 only) ===
+    launchingCustomer: {
+      name: "Launching Customer Deal",
+      costTime: 48,
+      costMoney: 0,
+      category: "experts",
+      description: "Your first real customer is ready to buy. Close the deal — this is the moment your startup becomes a real business.",
+      requiresPhase: 2,
+    },
+  },
+
+  gameEvents: {
+    seniorHint: {
+      trigger: "roundStart",
+      round: 3,
+      title: "A familiar voice...",
+      message: "Your Technical Coach reaches out: 'Your team has come a long way. I've been thinking — there might be a way I can contribute more deeply to what you're building. Let's talk.'",
+      severity: "info",
+      tips: ["Check your Technical Coach for new options this round."],
+    },
+    phase2Reached: {
+      trigger: "metric",
+      metric: "canEnterPhase2",
+      comparison: "above",
+      threshold: 0,
+      title: "Phase 2: Growth & Scale",
+      message: "Your Business Developer has exciting news: 'I've found someone who wants to be your launching customer. They've seen your validation work and they're serious. This could be your first real deal.'",
+      severity: "success",
+      tips: ["A new expert has appeared: Launching Customer", "Talk to your Business Developer about next steps"],
     },
   },
 

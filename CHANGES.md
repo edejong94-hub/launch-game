@@ -5,6 +5,35 @@ Each entry includes a date, description of what changed, and why.
 
 ---
 
+## 2026-04-01 – Expert Restructure, Cumulative Hours & Phase System Rework
+
+### Expert categories restructured (App.js)
+- **Customer category removed** — `customerInterviews` and `customerValidation` moved under **Business Developer** (they are coached by the BD, not standalone)
+- **Senior Technical Partner moved** from the Team category to **Technical Coach** — reflects the relationship: STP is an evolution of the TC role
+- **Senior Technical Partner hidden before Round 3** — completely invisible until round 3 starts; replaced by a cryptic in-game popup ("A familiar voice...") at the start of Round 3
+- **Launching Customer** added as a new activity under Business Developer — only visible and selectable in Phase 2
+
+### New Bank activities (startup-config.js + App.js)
+- **Loan Application** — unlocked after Bank Meeting
+- **Rabo Innovatie Lening (RIL)** — Rabobank innovation loan; requires Bank Meeting and BV legal form
+
+### Phase system reworked
+- **Development hours are now cumulative** across rounds — each round's remaining hours are added to a running `totalDevelopmentHours` total in teamData; phase gate checks this cumulative figure
+- **Phase 1 gate raised to 5,000h** (was 4,000h) — still reachable in ~2.5 rounds if the team plays efficiently
+- **Phase 2 gate set to 10,000h** (was 12,000h)
+- Phase promotion happens automatically when "Continue to Round N" is clicked if the Phase 1 gate criteria are met
+
+### Employment status — university removed from startup mode
+- Added `startup` as a proper employment type in `BASE_HOURS` (800h/round, no salary, +1 investor modifier)
+- All startup-mode defaults now use `'startup'` instead of `'university'` — university status no longer applies to startup teams
+- Employment Status selector UI remains research-mode only
+
+### Game events added to startup-config.js
+- **`seniorHint`** — fires at start of Round 3: cryptic message from the Technical Coach hinting they could contribute more
+- **`phase2Reached`** — fires at start of the first round after Phase 2 is unlocked: Business Developer announces a Launching Customer opportunity
+
+---
+
 ## 2026-03-25 – Startup Edition Complete UI Redesign
 
 ### Light theme overhaul (index.css)

@@ -149,7 +149,7 @@ const validateInitialData = (data) => {
     licenceAgreement: data.licenceAgreement || null,
     hiredProfiles: Array.isArray(data.hiredProfiles) ? data.hiredProfiles : [],
     startupIdea: typeof data.startupIdea === 'object' && data.startupIdea !== null ? data.startupIdea : { idea: "", problem: "", solution: "", target: "" },
-    employmentStatus: typeof data.employmentStatus === 'string' ? data.employmentStatus : 'university',
+    employmentStatus: typeof data.employmentStatus === 'string' ? data.employmentStatus : (isResearchMode ? 'university' : 'startup'),
     teamData: typeof data.teamData === 'object' && data.teamData !== null ? {
       cash: typeof data.teamData.cash === 'number' ? data.teamData.cash : GAME_CONFIG.gameInfo.startingCapital,
       phase: typeof data.teamData.phase === 'number' ? data.teamData.phase : 1,
@@ -162,6 +162,7 @@ const validateInitialData = (data) => {
       validationCount: typeof data.teamData.validationCount === 'number' ? data.teamData.validationCount : 0,
       investorEquity: typeof data.teamData.investorEquity === 'number' ? data.teamData.investorEquity : 0,
       cashHistory: Array.isArray(data.teamData.cashHistory) ? data.teamData.cashHistory : [],
+      totalDevelopmentHours: typeof data.teamData.totalDevelopmentHours === 'number' ? data.teamData.totalDevelopmentHours : 0,
     } : {
       cash: GAME_CONFIG.gameInfo.startingCapital,
       phase: 1,
@@ -174,6 +175,7 @@ const validateInitialData = (data) => {
       validationCount: 0,
       investorEquity: 0,
       cashHistory: [],
+      totalDevelopmentHours: 0,
     },
   };
 
@@ -349,7 +351,7 @@ const calculateProgress = (teamData, config) => {
   let totalSalaryCost = 0;
 
   // --- FOUNDER SALARY (based on employment status) ---
-  const empStatus = teamData.employmentStatus || 'university';
+  const empStatus = teamData.employmentStatus || (isResearchMode ? 'university' : 'startup');
   const foundersCount = teamData.founders || (isResearchMode ? 3 : 4);
   const founderSalaryCost = getFounderSalaryCost(empStatus, foundersCount);
   totalSalaryCost += founderSalaryCost;
@@ -438,7 +440,7 @@ const calculateProgress = (teamData, config) => {
 
   // --- EMPLOYMENT STATUS INVESTOR MODIFIER ---
   const employmentModifier = getEmploymentInvestorModifier(
-    teamData.employmentStatus || 'university',
+    teamData.employmentStatus || (isResearchMode ? 'university' : 'startup'),
     teamData.round || 1
   );
   investorAppeal += employmentModifier;
@@ -450,7 +452,7 @@ const calculateProgress = (teamData, config) => {
       : 1.0;
 
   // Get total hours using diminishing returns for team size
-  const baseHours = getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || (isResearchMode ? 3 : 4));
+  const baseHours = getAvailableHours(teamData.employmentStatus || (isResearchMode ? 'university' : 'startup'), teamData.founders || (isResearchMode ? 3 : 4));
   const availableHours = Math.round(baseHours * productivityMultiplier);
   const developmentHours = availableHours - totalTimeSpent;
 
@@ -473,13 +475,17 @@ const calculateProgress = (teamData, config) => {
       interviewsTotal >= 2 &&
       validationsTotal >= 1;
   } else {
+    // Cumulative hours: previous rounds + this round's remaining hours
+    const previousTotalHours = teamData.totalDevelopmentHours || 0;
+    const cumulativeDevelopmentHours = previousTotalHours + developmentHours;
+
     phaseProgress =
       currentPhase === 1
-        ? (developmentHours / config.phases.phase1.hoursRequired) * 100
-        : (developmentHours / config.phases.phase2.hoursRequired) * 100;
+        ? (cumulativeDevelopmentHours / config.phases.phase1.hoursRequired) * 100
+        : (cumulativeDevelopmentHours / config.phases.phase2.hoursRequired) * 100;
 
     canEnterPhase2 =
-      developmentHours >= config.phases.phase1.hoursRequired &&
+      cumulativeDevelopmentHours >= config.phases.phase1.hoursRequired &&
       interviewsTotal >= 4 &&
       validationsTotal >= 1;
   }
@@ -489,7 +495,12 @@ const calculateProgress = (teamData, config) => {
   const interrupt = teamData.interruptImpact || { hours: 0, money: 0, trl: 0 };
   // Interrupt hours are negative (time lost) → subtract to increase totalTimeSpent
   const adjustedTimeSpent = totalTimeSpent - (interrupt.hours || 0);
-  const adjustedDevelopmentHours = availableHours - adjustedTimeSpent;
+  const adjustedDevelopmentHoursThisRound = availableHours - adjustedTimeSpent;
+  // For startup mode, development hours accumulate across rounds
+  const previousTotalHoursForDisplay = !isResearchMode ? (teamData.totalDevelopmentHours || 0) : 0;
+  const adjustedDevelopmentHours = !isResearchMode
+    ? previousTotalHoursForDisplay + adjustedDevelopmentHoursThisRound
+    : adjustedDevelopmentHoursThisRound;
 
   // --- CASH ---
   const startingCash = teamData.cash || config.gameInfo.startingCapital;
@@ -498,7 +509,7 @@ const calculateProgress = (teamData, config) => {
 
   const adjustedTRLFinal = Math.min(9, currentTRL + (interrupt.trl || 0));
 
-  const maxHours = getAvailableHours(teamData.employmentStatus || 'university', teamData.founders || 3);
+  const maxHours = getAvailableHours(teamData.employmentStatus || (isResearchMode ? 'university' : 'startup'), teamData.founders || (isResearchMode ? 3 : 4));
 
   return {
     cash,
@@ -524,12 +535,13 @@ const calculateProgress = (teamData, config) => {
     currentTRL: adjustedTRLFinal,
     trlBonus,
     founderSalaryCost,
-    employmentStatus: teamData.employmentStatus || 'university',
+    employmentStatus: teamData.employmentStatus || (isResearchMode ? 'university' : 'startup'),
     maxHoursAvailable: maxHours,
     hoursOverLimit: adjustedTimeSpent > maxHours,
     employmentModifier,
     hasLabAccess: hasLabAccess(teamData.employmentStatus || 'university'),
     interruptCards: (interrupt.cards || []),
+    developmentHoursThisRound: adjustedDevelopmentHoursThisRound,
   };
 };
 
@@ -710,7 +722,7 @@ const isOfficeAvailable = (officeKey, officeOption, teamData, currentRoundActivi
 // EMPLOYMENT STATUS HELPERS (University Dilemma)
 // ============================================
 const FOUNDER_MULTIPLIERS = [1.0, 0.9, 0.7, 0.5, 0.3];
-const BASE_HOURS = { university: 200, parttime: 600, fulltime: 800 };
+const BASE_HOURS = { university: 200, parttime: 600, fulltime: 800, startup: 800 };
 
 const getAvailableHours = (status, founderCount) => {
   const base = BASE_HOURS[status] || 200;
@@ -726,6 +738,7 @@ const getFounderSalaryCost = (status, founderCount) => {
     university: 0,
     parttime: 6000,
     fulltime: 12000,
+    startup: 0,
   }[status] || 0;
   return costPerFounder * founderCount;
 };
@@ -741,6 +754,7 @@ const isGrantEligible = (status, activityId) => {
 };
 
 const getEmploymentInvestorModifier = (status, round) => {
+  if (status === 'startup') return 1; // Startups are fully committed
   if (status === 'fulltime') return 1;
   if (status === 'parttime') return 0;
   if (status === 'university' && round >= 3) return -1;
@@ -1308,7 +1322,7 @@ const EXPERT_CATEGORIES = [
     name: 'Team Only',
     icon: '🎯',
     description: 'Internal work - no expert meeting needed',
-    activities: ['prototypeDevelopment', 'cofounderAgreement', 'hireBusinessPerson', 'hireMarketExpert', 'hireOperations', 'networking', 'pivot', 'productDevelopment', 'seniorTechnicalPartner', 'marketing', 'marketAnalysisDIY', 'marketAnalysisOutsourced'],
+    activities: ['prototypeDevelopment', 'cofounderAgreement', 'hireBusinessPerson', 'hireMarketExpert', 'hireOperations', 'networking', 'pivot', 'productDevelopment', 'marketing', 'marketAnalysisDIY', 'marketAnalysisOutsourced'],
   },
   // Startup-specific expert categories
   {
@@ -1316,14 +1330,14 @@ const EXPERT_CATEGORIES = [
     name: 'Technical Coach',
     icon: '🔬',
     description: 'Technology introduction and technical partnership',
-    activities: ['technicalCoach'],
+    activities: ['technicalCoach', 'seniorTechnicalPartner'],
   },
   {
     id: 'businessDeveloper',
     name: 'Business Developer',
     icon: '🤝',
-    description: 'Customer discovery conversations and market adoption',
-    activities: ['businessDeveloper'],
+    description: 'Customer discovery, validation, and market adoption',
+    activities: ['businessDeveloper', 'customerInterviews', 'customerValidation', 'launchingCustomer'],
   },
   {
     id: 'legal',
@@ -1339,13 +1353,6 @@ const EXPERT_CATEGORIES = [
     icon: '🏛️',
     description: 'Technology Transfer Office meetings',
     activities: ['ttoDiscussion', 'ttoNegotiation', 'licenceNegotiation', 'labNegotiation', 'universityExit'],
-  },
-  {
-    id: 'customer',
-    name: 'Customer',
-    icon: '👤',
-    description: 'Customer discovery and validation',
-    activities: ['customerInterviews', 'customerValidation'],
   },
   {
     id: 'patent',
@@ -1396,7 +1403,6 @@ const CATEGORY_COLORS = {
   technicalCoach: '#6366f1',   // indigo
   businessDeveloper: '#f97316', // orange
   legal: '#8b5cf6',            // purple
-  customer: '#0ea5e9',         // sky blue
   patent: '#ec4899',           // pink
   investor: '#16a34a',         // green
   grant: '#eab308',            // yellow
@@ -1439,6 +1445,16 @@ const ExpertActivitySelector = ({
   const renderActivity = (activityKey) => {
     const activity = config.activities[activityKey];
     if (!activity) return null;
+
+    // Hide completely if requiresRound not yet reached (startup mode only)
+    if (!isResearchMode && activity.requiresRound && (teamData.round || 1) < activity.requiresRound) {
+      return null;
+    }
+
+    // Hide completely if requiresPhase not yet reached (startup mode only)
+    if (!isResearchMode && activity.requiresPhase && (teamData.phase || 1) < activity.requiresPhase) {
+      return null;
+    }
 
     const checked = activities[activityKey] || false;
     const unlockStatus = isActivityUnlocked(activityKey, activity, teamData, config, activities);
@@ -1998,7 +2014,7 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   const [hiredProfiles, setHiredProfiles] = useState(initialData?.hiredProfiles || []);
   const [showDiversityEvent, setShowDiversityEvent] = useState(false);
   const [diversityEventSeen, setDiversityEventSeen] = useState(initialData?.diversityEventSeen || false);
-  const [employmentStatus, setEmploymentStatus] = useState(initialData?.employmentStatus || initialData?.teamData?.employmentStatus || 'university');
+  const [employmentStatus, setEmploymentStatus] = useState(initialData?.employmentStatus || initialData?.teamData?.employmentStatus || (isResearchMode ? 'university' : 'startup'));
 
   // Pivot state
   const [showPivotModal, setShowPivotModal] = useState(false);
@@ -2149,6 +2165,7 @@ useEffect(() => {
       interviews: teamData?.interviewCount || 0,
       cash: teamData?.cash || startingCapital,
       founderEquity: 100 - (progress?.investorEquity || 0),
+      canEnterPhase2: (teamData?.phase || 1) >= 2 ? 1 : 0,
     });
   }
 }, [
@@ -2299,7 +2316,7 @@ return () => {};
       // Initial values so dashboard can display something
       cash: startingCapital,
       trl: isResearchMode ? 3 : undefined,
-      employmentStatus: 'university',
+      employmentStatus: isResearchMode ? 'university' : 'startup',
       interviewCount: 0,
       validationCount: 0,
       investorEquity: 0,
@@ -2478,6 +2495,9 @@ return () => {};
   loanInterest: Math.max(teamData.loanInterest ?? 0, Number(funding.loanInterest || 0)),
   lowestCash: Math.min(teamData.lowestCash ?? progress.cash, progress.cash),
   cashHistory: [...(teamData.cashHistory || []), progress.cash],
+  totalDevelopmentHours: !isResearchMode
+    ? (teamData.totalDevelopmentHours || 0) + (progress.developmentHoursThisRound || 0)
+    : undefined,
 };
 
     if (isResearchMode) {
@@ -2607,6 +2627,11 @@ return () => {};
         toast.error(errorMsg);
         return; // Don't proceed if approval check fails
       }
+    }
+
+    // Advance phase if threshold met (startup mode)
+    if (!isResearchMode && progress.canEnterPhase2 && (teamData.phase || 1) === 1) {
+      setTeamData(prev => ({ ...prev, phase: 2 }));
     }
 
     setCurrentRound((prev) => prev + 1);
@@ -4017,7 +4042,7 @@ export default function LaunchGame() {
                 hiredProfiles: roundData.hiredProfiles || [],
                 diversityEventSeen: currentRound >= 2,
                 startupIdea: data.startupIdea || roundData.startupIdea,
-                employmentStatus: roundData.employmentStatus ?? 'university',
+                employmentStatus: roundData.employmentStatus ?? (isResearchMode ? 'university' : 'startup'),
                 teamData: {
                   cash: roundData.progress?.cash ?? roundData.cash ?? GAME_CONFIG.gameInfo.startingCapital,
                   phase: roundData.phase ?? 1,
@@ -4029,6 +4054,7 @@ export default function LaunchGame() {
                   interviewCount: roundData.interviewCount ?? roundData.progress?.interviewsTotal ?? 0,
                   validationCount: roundData.validationCount ?? roundData.progress?.validationsTotal ?? 0,
                   investorEquity: roundData.investorEquity ?? 0,
+                  totalDevelopmentHours: roundData.totalDevelopmentHours ?? 0,
                 },
               };
 

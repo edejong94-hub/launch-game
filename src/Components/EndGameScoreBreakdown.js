@@ -4,11 +4,16 @@ import {
   ChevronDown
 } from "react-feather";
 import { calculateResearchScore } from '../Configs/research-config';
+import { calculateStartupScore } from '../Configs/startup-config';
 
-const EndGameScoreBreakdown = ({ teamData, progress }) => {
+const EndGameScoreBreakdown = ({ teamData, progress, config }) => {
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
+
+  const scoreResult = config?.gameMode === 'startup'
+    ? calculateStartupScore(teamData, progress)
+    : calculateResearchScore(teamData, progress);
 
   const {
     totalScore,
@@ -18,7 +23,7 @@ const EndGameScoreBreakdown = ({ teamData, progress }) => {
     achievements,
     values,
     ranking,
-  } = calculateResearchScore(teamData, progress);
+  } = scoreResult;
 
   const positiveAchievements = achievements.filter(a => a.points >= 0);
   const negativeAchievements = achievements.filter(a => a.points < 0);
@@ -252,9 +257,14 @@ const EndGameScoreBreakdown = ({ teamData, progress }) => {
                   High dilution ({100 - values.equity}% given away). Be careful with future rounds.
                 </li>
               )}
-              {values.trl >= 7 && (
+              {config?.gameMode !== 'startup' && values.trl >= 7 && (
                 <li className="feedback-success">
                   Great TRL progress! Your technology is market-ready.
+                </li>
+              )}
+              {config?.gameMode === 'startup' && values.revenue > 0 && (
+                <li className="feedback-success">
+                  Revenue generated — paying customers beat grant committees.
                 </li>
               )}
               {values.cash > 30000 && (
@@ -267,7 +277,7 @@ const EndGameScoreBreakdown = ({ teamData, progress }) => {
                   Multiple bonuses achieved! Well-rounded execution.
                 </li>
               )}
-              {values.interviews >= 6 && (
+              {values.interviews >= (config?.gameMode === 'startup' ? 5 : 6) && (
                 <li className="feedback-success">
                   Strong customer discovery. You understand your market.
                 </li>

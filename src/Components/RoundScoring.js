@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { calculateResearchScore } from '../Configs/research-config';
+import { calculateStartupScore } from '../Configs/startup-config';
 import './RoundScoring.css';
 
 const RoundScoring = ({ team, mode, currentRound, onClose }) => {
@@ -9,7 +10,8 @@ const RoundScoring = ({ team, mode, currentRound, onClose }) => {
 
   useEffect(() => {
     if (team) {
-      const data = calculateResearchScore(team, team.progress || {});
+      const calcScore = mode === 'startup' ? calculateStartupScore : calculateResearchScore;
+      const data = calcScore(team, team.progress || {});
       setScoreData(data);
 
       const timer = setTimeout(() => setAnimationPhase('showing'), 100);

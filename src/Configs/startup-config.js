@@ -24,8 +24,8 @@ export const STARTUP_CONFIG = {
     phase1: {
       name: "Idea & Validation",
       hoursRequired: 5000,
-      customerValidationRequired: 3,
-      minimumInterviews: 3,
+      customerValidationRequired: 2,
+      minimumInterviews: 2,
     },
     phase2: {
       name: "Growth & Scale",

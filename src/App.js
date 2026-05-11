@@ -2155,6 +2155,67 @@ useEffect(() => {
   shownEvents,
   employmentStatus,
 ]);
+
+  // Listen for facilitator corrections in real-time
+  useEffect(() => {
+    if (!teamName) return;
+
+    const oderId = localStorage.getItem("oderId");
+    const gameId = getGameId();
+    if (!oderId || !gameId) return;
+
+    // Track the correctionId we last processed so we don't re-apply on remount
+    let lastCorrectionId = null;
+    let isFirstSnapshot = true;
+
+    const unsubscribe = onSnapshot(
+      doc(db, "games", gameId, "teams", oderId),
+      (docSnap) => {
+        if (!docSnap.exists()) return;
+        const correction = docSnap.data().facilitatorCorrection;
+        if (!correction?.correctionId) return;
+
+        // On first snapshot just record the existing correctionId — don't apply it
+        if (isFirstSnapshot) {
+          isFirstSnapshot = false;
+          lastCorrectionId = correction.correctionId;
+          return;
+        }
+
+        if (correction.correctionId === lastCorrectionId) return;
+        lastCorrectionId = correction.correctionId;
+
+        const v = correction.values;
+
+        setTeamData(prev => ({
+          ...prev,
+          ...(v.cash !== undefined && { cash: v.cash }),
+          ...(v.trl !== undefined && { trl: v.trl }),
+          ...(v.interviewCount !== undefined && { interviewCount: v.interviewCount }),
+          ...(v.validationCount !== undefined && { validationCount: v.validationCount }),
+          ...(v.investorEquity !== undefined && { investorEquity: v.investorEquity }),
+          ...(v.employees !== undefined && { employees: v.employees }),
+        }));
+
+        if (v.employmentStatus) setEmploymentStatus(v.employmentStatus);
+        if (v.licenceAgreement !== undefined) setLicenceAgreement(v.licenceAgreement);
+        if (v.legalForm !== undefined) setLegalForm(v.legalForm);
+        if (v.office) setOffice(v.office);
+
+        toast.info(
+          `Facilitator correction applied: "${correction.reason}"`,
+          10000
+        );
+      },
+      (err) => {
+        console.error("Error in facilitator correction listener:", err);
+      }
+    );
+
+    return () => unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamName]);
+
 // Check for round-start events
 useEffect(() => {
   if (currentRound > 0 && ideaConfirmed && !showReport) {

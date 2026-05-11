@@ -105,8 +105,8 @@ export const STARTUP_CONFIG = {
       costTime: 48,
       costMoney: 0,
       category: "discovery",
-      description: "Get real commitment from customers — letter of intent, pre-order, or pilot agreement. Only meaningful after understanding their problem.",
-      requiresInterviews: 3,
+      description: "Get real commitment from customers — letter of intent, pre-order, or pilot agreement. Requires 2 customer interviews first. Only meaningful after understanding their problem.",
+      requiresInterviews: 2,
     },
     pivot: {
       name: "Pivot",

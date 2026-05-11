@@ -3740,6 +3740,9 @@ return () => {};
         title="Funding & Revenue"
         description="Fill in only if you actually closed a deal this round."
       >
+        <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.75rem', marginTop: 0 }}>
+          Enter amounts as whole numbers without dots or commas — e.g. <strong style={{ color: '#94a3b8' }}>50000</strong> for €50.000
+        </p>
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Revenue this round</label>
@@ -3753,7 +3756,7 @@ return () => {};
                   revenue: e.target.value,
                 }))
               }
-              placeholder="€"
+              placeholder="e.g. 10000"
               min="0"
             />
           </div>
@@ -3771,7 +3774,7 @@ return () => {};
                   subsidy: e.target.value,
                 }))
               }
-              placeholder="€"
+              placeholder="e.g. 25000"
               min="0"
             />
           </div>
@@ -3787,7 +3790,7 @@ return () => {};
                   investment: e.target.value,
                 }))
               }
-              placeholder="€"
+              placeholder="e.g. 50000"
               min="0"
             />
           </div>
@@ -3833,7 +3836,7 @@ return () => {};
                   loan: e.target.value,
                 }))
               }
-              placeholder="€"
+              placeholder="e.g. 20000"
               min="0"
             />
           </div>

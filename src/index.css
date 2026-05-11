@@ -572,7 +572,7 @@ body:has(.startup-mode) {
 }
 
 .cash-graph-card .graph-area {
-  opacity: 0.1;
+  opacity: 1;
 }
 
 .cash-graph-card .graph-area.positive {
@@ -622,6 +622,26 @@ body:has(.startup-mode) {
 
 .cash-graph-card .graph-value-label.negative {
   fill: #dc2626;
+}
+
+/* Live dot pulse animation */
+@keyframes cashRingPulse {
+  0%   { r: 8;  opacity: 0.20; }
+  70%  { r: 18; opacity: 0;    }
+  100% { r: 18; opacity: 0;    }
+}
+
+.cash-graph-card .graph-dot-pulse-ring {
+  animation: cashRingPulse 2s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.cash-graph-card .graph-dot-live {
+  r: 5.5;
+  stroke-width: 2.5;
+  stroke: #ffffff;
 }
 
 /* Startup Snapshot overlay */

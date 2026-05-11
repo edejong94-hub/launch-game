@@ -2,7 +2,7 @@ import GameEventPopup, { checkEventTrigger } from './Components/Gameeventpopup';
 import EndGameScoreBreakdown from './Components/EndGameScoreBreakdown';
 import PivotReasonSelector from './Components/PivotReasonSelector';
 import InterruptCardRow from './Components/InterruptCardRow';
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   CheckCircle,
   AlertCircle,
@@ -2026,6 +2026,32 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   // Startup Snapshot overlay
   const [showSnapshot, setShowSnapshot] = useState(false);
 
+  // Cash graph: live snapshot of every cash change within the current round
+  const [cashSnapshots, setCashSnapshots] = useState(
+    !isResearchMode ? [initialData?.teamData?.cash ?? config.gameInfo.startingCapital] : []
+  );
+  const cashSnapshotTimerRef = useRef(null);
+
+  // Reset snapshots when round advances
+  useEffect(() => {
+    if (isResearchMode) return;
+    setCashSnapshots([teamData.cash ?? config.gameInfo.startingCapital]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRound]);
+
+  // Debounced capture of every live cash change (300ms)
+  useEffect(() => {
+    if (isResearchMode) return;
+    clearTimeout(cashSnapshotTimerRef.current);
+    cashSnapshotTimerRef.current = setTimeout(() => {
+      setCashSnapshots(prev => {
+        if (prev[prev.length - 1] === progress.cash) return prev;
+        return [...prev, progress.cash];
+      });
+    }, 300);
+    return () => clearTimeout(cashSnapshotTimerRef.current);
+  }, [progress.cash, isResearchMode]);
+
   const [startupIdea, setStartupIdea] = useState(initialData?.startupIdea || {
     technique: "",
     productIdea: "",
@@ -3431,48 +3457,72 @@ return () => {};
         </div>
       )}
 
-      {/* Cash Flow Graph – startup mode only, shows money trajectory across rounds */}
+      {/* Cash Flow Graph – startup mode only, live-updating with smooth bezier curve */}
       {!isResearchMode && (() => {
         const startCash = config.gameInfo.startingCapital;
         const history = teamData.cashHistory || [];
-        // Build data points: Start + each completed round + current live preview
-        const points = [startCash, ...history, progress.cash];
-        const labels = ['Start', ...history.map((_, i) => `R${i + 1}`), currentRound > 1 ? `R${currentRound}` : 'R1'];
-        // If we're still in round 1 and no history yet, just show Start → R1
-        // If we have history, show Start + completed rounds + current
 
-        const maxVal = Math.max(...points, 1);
-        const minVal = Math.min(...points, 0);
-        const range = maxVal - minVal || 1;
+        // Anchor points: start + one per completed round
+        const anchors = [startCash, ...history];
+        const snaps = cashSnapshots.length > 0 ? cashSnapshots : [progress.cash];
+        // Deduplicate: trim first snapshot if it equals the last anchor
+        const snapsTrimmed = snaps[0] === anchors[anchors.length - 1] ? snaps.slice(1) : snaps;
+        const allPoints = [...anchors, ...snapsTrimmed];
+
+        const anchorCount = anchors.length;
+        const totalPoints = allPoints.length;
 
         const w = 500;
-        const h = 140;
-        const padX = 40;
-        const padTop = 25;
-        const padBot = 25;
+        const h = 150;
+        const padX = 44;
+        const padTop = 30;
+        const padBot = 28;
         const graphW = w - padX * 2;
         const graphH = h - padTop - padBot;
 
-        const getX = (i) => padX + (i / (points.length - 1 || 1)) * graphW;
+        const maxVal = Math.max(...allPoints, 1);
+        const minVal = Math.min(...allPoints, 0);
+        const range = maxVal - minVal || 1;
+
+        const getX = (i) => padX + (i / Math.max(totalPoints - 1, 1)) * graphW;
         const getY = (v) => padTop + (1 - (v - minVal) / range) * graphH;
         const zeroY = getY(0);
 
-        // Build path
-        const linePath = points.map((v, i) => `${i === 0 ? 'M' : 'L'}${getX(i).toFixed(1)},${getY(v).toFixed(1)}`).join(' ');
-        // Area fill path (down to zero line)
-        const areaPath = linePath +
-          ` L${getX(points.length - 1).toFixed(1)},${zeroY.toFixed(1)}` +
-          ` L${getX(0).toFixed(1)},${zeroY.toFixed(1)} Z`;
+        const pts = allPoints.map((v, i) => ({ x: getX(i), y: getY(v) }));
 
-        const lastVal = points[points.length - 1];
+        // Smooth cubic bezier — control points at midpoint X between each pair
+        const buildSmoothPath = (points) => {
+          if (points.length <= 1) return points.length === 1 ? `M${points[0].x},${points[0].y}` : '';
+          let d = `M${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
+          for (let i = 1; i < points.length; i++) {
+            const cpx = ((points[i-1].x + points[i].x) / 2).toFixed(1);
+            d += ` C${cpx},${points[i-1].y.toFixed(1)} ${cpx},${points[i].y.toFixed(1)} ${points[i].x.toFixed(1)},${points[i].y.toFixed(1)}`;
+          }
+          return d;
+        };
+
+        const linePath = buildSmoothPath(pts);
+        const lastPt = pts[pts.length - 1];
+        const areaPath = linePath
+          + ` L${lastPt.x.toFixed(1)},${zeroY.toFixed(1)}`
+          + ` L${pts[0].x.toFixed(1)},${zeroY.toFixed(1)} Z`;
+
+        const lastVal = allPoints[allPoints.length - 1];
         const isNeg = lastVal < 0;
+        const lineColor = isNeg ? '#dc2626' : '#16a34a';
+
+        // 3 subtle grid lines
+        const gridLines = [0.25, 0.5, 0.75].map(frac => ({
+          y: getY(minVal + frac * range),
+          label: `€${((minVal + frac * range) / 1000).toFixed(0)}k`,
+        }));
 
         return (
           <div className="cash-graph-card">
             <div className="graph-header">
               <div>
                 <div className="graph-title">Cash Flow</div>
-                <div className="graph-sub">Your money over time</div>
+                <div className="graph-sub">Live — updates as you plan</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div className={`graph-value ${isNeg ? 'negative' : 'positive'}`}>
@@ -3484,34 +3534,76 @@ return () => {};
               </div>
             </div>
             <svg viewBox={`0 0 ${w} ${h}`} style={{ height: 160 }}>
-              {/* Zero line */}
-              {minVal < 0 && (
-                <line
-                  x1={padX} y1={zeroY} x2={w - padX} y2={zeroY}
-                  className="graph-zero-line"
-                />
-              )}
-              {/* Area fill */}
-              <path d={areaPath} className={`graph-area ${isNeg ? 'negative' : 'positive'}`} />
-              {/* Line */}
-              <path d={linePath} className={`graph-line ${isNeg ? 'negative' : 'positive'}`} />
-              {/* Dots + labels */}
-              {points.map((v, i) => (
+              <defs>
+                <linearGradient id="cashAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={lineColor} stopOpacity="0.30" />
+                  <stop offset="100%" stopColor={lineColor} stopOpacity="0.00" />
+                </linearGradient>
+                <filter id="cashLineGlow" x="-20%" y="-80%" width="140%" height="260%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* Subtle grid lines */}
+              {gridLines.map((gl, i) => (
                 <g key={i}>
-                  <circle
-                    cx={getX(i)} cy={getY(v)}
-                    className={`graph-dot ${v < 0 ? 'negative' : 'positive'}`}
-                  />
-                  <text x={getX(i)} y={h - 4} className="graph-label">{labels[i]}</text>
-                  <text
-                    x={getX(i)}
-                    y={getY(v) - 12}
-                    className={`graph-value-label ${v < 0 ? 'negative' : 'positive'}`}
-                  >
-                    €{(v / 1000).toFixed(1)}k
+                  <line x1={padX} y1={gl.y} x2={w - padX} y2={gl.y}
+                    stroke="#f0f0ee" strokeWidth="1" strokeDasharray="3 5" />
+                  <text x={padX - 5} y={gl.y + 3.5} fontSize="8" fill="#c9cac8" textAnchor="end">
+                    {gl.label}
                   </text>
                 </g>
               ))}
+
+              {/* Zero line — only when chart goes negative */}
+              {minVal < 0 && (
+                <line x1={padX} y1={zeroY} x2={w - padX} y2={zeroY}
+                  className="graph-zero-line" />
+              )}
+
+              {/* Area fill with gradient */}
+              <path d={areaPath} fill="url(#cashAreaGrad)" />
+
+              {/* Line with glow */}
+              <path d={linePath}
+                className={`graph-line ${isNeg ? 'negative' : 'positive'}`}
+                filter="url(#cashLineGlow)"
+              />
+
+              {/* Anchor dots + round labels */}
+              {anchors.map((v, i) => (
+                <g key={`a${i}`}>
+                  <circle cx={getX(i)} cy={getY(v)} r={4}
+                    className={`graph-dot ${v < 0 ? 'negative' : 'positive'}`} />
+                  <text x={getX(i)} y={h - 3} className="graph-label">
+                    {i === 0 ? 'Start' : `R${i}`}
+                  </text>
+                </g>
+              ))}
+
+              {/* Snapshot dots — tiny, semi-transparent, no labels */}
+              {snapsTrimmed.slice(0, -1).map((v, i) => (
+                <circle key={`s${i}`}
+                  cx={getX(anchorCount + i)} cy={getY(v)} r={2}
+                  fill={v < 0 ? '#dc2626' : '#16a34a'} opacity="0.35" />
+              ))}
+
+              {/* Live dot — pulsing ring + solid dot + value label */}
+              <circle cx={lastPt.x} cy={lastPt.y} r={13}
+                fill={lineColor} className="graph-dot-pulse-ring" />
+              <circle cx={lastPt.x} cy={lastPt.y} r={5.5}
+                className={`graph-dot graph-dot-live ${isNeg ? 'negative' : 'positive'}`} />
+              <text x={lastPt.x} y={lastPt.y - 14}
+                className={`graph-value-label ${isNeg ? 'negative' : 'positive'}`}>
+                €{(lastVal / 1000).toFixed(1)}k
+              </text>
+              <text x={lastPt.x} y={h - 3} className="graph-label">
+                {`R${currentRound}`}
+              </text>
             </svg>
           </div>
         );

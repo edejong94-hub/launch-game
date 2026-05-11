@@ -2032,26 +2032,6 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
   );
   const cashSnapshotTimerRef = useRef(null);
 
-  // Reset snapshots when round advances
-  useEffect(() => {
-    if (isResearchMode) return;
-    setCashSnapshots([teamData.cash ?? config.gameInfo.startingCapital]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentRound]);
-
-  // Debounced capture of every live cash change (300ms)
-  useEffect(() => {
-    if (isResearchMode) return;
-    clearTimeout(cashSnapshotTimerRef.current);
-    cashSnapshotTimerRef.current = setTimeout(() => {
-      setCashSnapshots(prev => {
-        if (prev[prev.length - 1] === progress.cash) return prev;
-        return [...prev, progress.cash];
-      });
-    }, 300);
-    return () => clearTimeout(cashSnapshotTimerRef.current);
-  }, [progress.cash, isResearchMode]);
-
   const [startupIdea, setStartupIdea] = useState(initialData?.startupIdea || {
     technique: "",
     productIdea: "",
@@ -2142,6 +2122,28 @@ const TeamGameForm = ({ config, initialData, onReset }) => {
     },
     config
   );
+
+  // Reset cash snapshots when round advances
+  useEffect(() => {
+    if (isResearchMode) return;
+    setCashSnapshots([teamData.cash ?? config.gameInfo.startingCapital]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRound]);
+
+  // Debounced capture of every live cash change (300ms)
+  useEffect(() => {
+    if (isResearchMode) return;
+    clearTimeout(cashSnapshotTimerRef.current);
+    cashSnapshotTimerRef.current = setTimeout(() => {
+      setCashSnapshots(prev => {
+        if (prev[prev.length - 1] === progress.cash) return prev;
+        return [...prev, progress.cash];
+      });
+    }, 300);
+    return () => clearTimeout(cashSnapshotTimerRef.current);
+  // isResearchMode is stable (derived from config, not state), so omit from deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress.cash]);
 
   // Save session whenever important state changes
 useEffect(() => {

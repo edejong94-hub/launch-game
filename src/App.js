@@ -2173,15 +2173,17 @@ useEffect(() => {
       (docSnap) => {
         if (!docSnap.exists()) return;
         const correction = docSnap.data().facilitatorCorrection;
-        if (!correction?.correctionId) return;
 
-        // On first snapshot just record the existing correctionId — don't apply it
+        // On first snapshot always record current state and skip — regardless of
+        // whether a correction exists. This prevents re-applying old corrections
+        // on page reload, while still catching future ones.
         if (isFirstSnapshot) {
           isFirstSnapshot = false;
-          lastCorrectionId = correction.correctionId;
+          lastCorrectionId = correction?.correctionId ?? null;
           return;
         }
 
+        if (!correction?.correctionId) return;
         if (correction.correctionId === lastCorrectionId) return;
         lastCorrectionId = correction.correctionId;
 

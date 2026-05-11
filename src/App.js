@@ -2164,28 +2164,21 @@ useEffect(() => {
     const gameId = getGameId();
     if (!oderId || !gameId) return;
 
-    // Track the correctionId we last processed so we don't re-apply on remount
-    let lastCorrectionId = null;
-    let isFirstSnapshot = true;
+    // Use localStorage to track which correction was last applied.
+    // This survives page reloads and correctly handles corrections made
+    // while the student was away — unlike the old isFirstSnapshot flag.
+    const storageKey = `lastCorrectionId_${gameId}_${oderId}`;
 
     const unsubscribe = onSnapshot(
       doc(db, "games", gameId, "teams", oderId),
       (docSnap) => {
         if (!docSnap.exists()) return;
         const correction = docSnap.data().facilitatorCorrection;
-
-        // On first snapshot always record current state and skip — regardless of
-        // whether a correction exists. This prevents re-applying old corrections
-        // on page reload, while still catching future ones.
-        if (isFirstSnapshot) {
-          isFirstSnapshot = false;
-          lastCorrectionId = correction?.correctionId ?? null;
-          return;
-        }
-
         if (!correction?.correctionId) return;
-        if (correction.correctionId === lastCorrectionId) return;
-        lastCorrectionId = correction.correctionId;
+
+        // Skip if this correction was already applied (even across reloads)
+        const lastApplied = localStorage.getItem(storageKey);
+        if (String(correction.correctionId) === lastApplied) return;
 
         const v = correction.values;
 
@@ -2203,6 +2196,9 @@ useEffect(() => {
         if (v.licenceAgreement !== undefined) setLicenceAgreement(v.licenceAgreement);
         if (v.legalForm !== undefined) setLegalForm(v.legalForm);
         if (v.office) setOffice(v.office);
+
+        // Mark as applied before showing the toast
+        localStorage.setItem(storageKey, String(correction.correctionId));
 
         toast.info(
           `Facilitator correction applied: "${correction.reason}"`,
